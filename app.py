@@ -1,81 +1,74 @@
 import streamlit as st
-import streamlit.components.v1 as components
+import re
 import time
+from g4f.client import Client
+import streamlit.components.v1 as components
 
 # إعدادات الصفحة
-st.set_page_config(page_title="SPIDER-AI | محرك التطوير الذكي", layout="wide")
+st.set_page_config(page_title="SPIDER-AI Engine", page_icon="🕷️", layout="wide")
 
-# CSS احترافي يدمج بين تصاميمك اليدوية وروح البرمجة الحديثة
+# CSS المحسن (Modern Tech Style)
 st.markdown("""
     <style>
-    :root { --bg: #0b0e14; --panel: #161b22; --accent: #00d4ff; }
-    .main { background-color: var(--bg); }
-    .stApp { background-color: var(--bg); }
-    h1, h2, h3 { color: #ffffff; font-family: 'Segoe UI', sans-serif; }
-    
-    /* لوحة المحادثة */
-    .chat-container { background: var(--panel); border-radius: 12px; padding: 20px; border: 1px solid #30363d; height: 400px; overflow-y: auto; }
-    
-    /* محاكي المتصفح (المعاينة) */
-    .browser-frame { 
-        background: #0d1117; border-radius: 12px; border: 2px solid #30363d; 
-        box-shadow: 0 20px 40px rgba(0,0,0,0.5); overflow: hidden;
-    }
-    .browser-header { background: #21262d; padding: 10px; display: flex; gap: 8px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; background: #ff5f56; }
-    
-    /* الأزرار */
-    .stButton>button { border-radius: 8px; border: 1px solid var(--accent); background: transparent; color: var(--accent); width: 100%; }
-    .stButton>button:hover { background: var(--accent); color: black; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono&display=swap');
+    :root { --bg: #09090b; --sidebar: #18181b; --accent: #2ea44f; }
+    [data-testid="stAppViewContainer"] { background-color: var(--bg); font-family: 'Inter', sans-serif; }
+    [data-testid="stSidebar"] { background-color: var(--sidebar); border-left: 1px solid #27272a; padding: 20px; }
+    .chat-msg { background: #27272a; padding: 12px; border-radius: 8px; margin-bottom: 10px; color: #e4e4e7; font-size: 14px; }
+    h1, h2 { color: #ffffff; }
+    .stButton>button { width: 100%; border-radius: 6px; background: var(--accent); color: white; border: none; }
     </style>
 """, unsafe_allow_html=True)
 
-# إدارة الحالة (الأساس البرمجي)
-if 'history' not in st.session_state: st.session_state.history = []
-if 'chat_log' not in st.session_state: st.session_state.chat_log = []
-if 'code' not in st.session_state: st.session_state.code = "<h1>SPIDER-AI</h1><p>ابدأ البرمجة الآن...</p>"
+# إدارة الحالة
+if 'messages' not in st.session_state:
+    st.session_state.messages = [{"role": "agent", "content": "أنا SPIDER-AI. صف لي مشروعك وسأقوم بتجسيده برمجياً."}]
+if 'current_stage' not in st.session_state:
+    st.session_state.current_stage = "discussion"
+if 'generated_html' not in st.session_state:
+    st.session_state.generated_html = ""
 
-# الهيكل الجانبي (من واقع رسمك)
+client = Client()
+
+def ask_agent(prompt):
+    system_prompt = "You are a senior developer. Output ONLY valid, clean HTML/CSS/JS in a single file. No markdown blocks, no placeholders. Arabic text inside UI."
+    try:
+        response = client.chat.completions.create(model="gpt-4o", messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}])
+        return response.choices[0].message.content.strip()
+    except: return "ERROR_API"
+
+# --- الواجهة ---
+
 with st.sidebar:
-    st.markdown("## 🕸️ SPIDER-AI")
-    st.write("المنصة الذكية لبناء المواقع")
-    st.divider()
+    st.title("🕷️ SPIDER-AI")
+    st.write("---")
+    chat_container = st.container(height=500)
+    for msg in st.session_state.messages:
+        chat_container.markdown(f"<div class='chat-msg'>{msg['content']}</div>", unsafe_allow_html=True)
     
-    # تحكم في الإصدارات
-    st.markdown("### ⏳ سجل الإصدارات")
-    version = st.selectbox("اختر إصداراً للمعاينة:", [f"الإصدار {i+1}" for i in range(len(st.session_state.history))] or ["لا توجد إصدارات"])
-    
-    st.divider()
-    st.markdown("### 📊 الأهداف المالية")
-    subs = st.slider("عدد المشتركين:", 100, 100000, 5000)
-    st.markdown(f"**الدخل المتوقع:** ${subs * 5:,}")
-    
-    st.divider()
-    if st.button("تسجيل دخول"): st.write("جاري الانتقال...")
-    if st.button("حساب جديد"): st.write("جاري الانتقال...")
+    user_input = st.text_input("أدخل فكرتك...")
+    if st.button("توليد التجسيد"):
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        st.session_state.current_stage = "generating"
+        st.rerun()
 
-# الواجهة الرئيسية
-col1, col2 = st.columns([1, 1.5])
+# منطقة المعاينة الرئيسية
+if st.session_state.current_stage == "generating":
+    with st.spinner("جاري بناء المحرك التفاعلي..."):
+        full_prompt = f"Build this project: {user_input}. Ensure it is a complete single-file HTML/CSS/JS app."
+        code = ask_agent(full_prompt)
+        # تنظيف الكود
+        code = re.sub(r'^```html\s*', '', code).replace('```', '')
+        st.session_state.generated_html = code
+        st.session_state.current_stage = "finished"
+        st.rerun()
 
-with col1:
-    st.markdown("### 💬 المحادثة البرمجية")
-    with st.container():
-        st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-        for msg in st.session_state.chat_log:
-            st.write(f"**{msg['role']}:** {msg['text']}")
-        
-        prompt = st.text_input("اكتب فكرتك هنا...", key="user_prompt")
-        if st.button("إرسال التوجيه"):
-            st.session_state.chat_log.append({"role": "مستخدم", "text": prompt})
-            # هنا يتم ربط منطق التوليد
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
-with col2:
-    st.markdown("### 🌐 المعاينة الحية")
-    st.markdown('''
-        <div class="browser-frame">
-            <div class="browser-header"><div class="dot"></div><div class="dot" style="background:#ffbd2e;"></div><div class="dot" style="background:#27c93f;"></div></div>
-    ''', unsafe_allow_html=True)
-    components.html(st.session_state.code, height=500)
-    st.markdown('</div>', unsafe_allow_html=True)
+elif st.session_state.current_stage == "finished":
+    st.markdown("### 🖥️ المعاينة الحية (Live View)")
+    components.html(st.session_state.generated_html, height=700, scrolling=True)
+    if st.button("إعادة المحادثة"):
+        st.session_state.current_stage = "discussion"
+        st.rerun()
+else:
+    st.markdown("## مرحباً بك في SPIDER-AI")
+    st.info("اختر فكرتك من القائمة الجانبية لنبدأ عملية التجسيد البرمجي.")
