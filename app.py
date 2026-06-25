@@ -1,55 +1,41 @@
 import streamlit as st
-from streamlit_option_menu import option_menu
 
-# إعداد الصفحة لتكون واسعة (Wide Mode)
+# إعداد الصفحة
 st.set_page_config(page_title="SPIDER-AI", layout="wide")
 
-# تنسيق CSS مخصص ليشبه Tailwind (مظهر عصري)
-st.markdown("""
-    <style>
-    .main {background-color: #f8fafc;}
-    .stButton>button {width: 100%; border-radius: 10px; font-weight: bold;}
-    .css-1r6slb0 {padding: 2rem;} /* تحسين التباعد للموبايل */
-    </style>
-""", unsafe_allow_html=True)
+# تصميم القائمة الجانبية (بناءً على دائرتك رقم 8)
+with st.sidebar:
+    st.title("🕷️ SPIDER-AI")
+    st.markdown("---")
+    st.button("🏠 الرئيسية")
+    st.button("⚙️ الإعدادات")
+    st.button("👤 البروفايل")
+    st.markdown("---")
+    st.subheader("أدوات التحكم")
+    st.write("🔧 توليد تطبيقات")
+    st.write("🎨 تصميم واجهات")
 
-# 1. الـ Header (الشعار وأزرار التحكم)
-with st.container():
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.title("🕷️ SPIDER-AI")
-    with col2:
-        if st.button("⚙️ الإعدادات"):
-            st.write("تم فتح الإعدادات")
+# الهيدر العلوي
+st.header("لوحة التحكم - SPIDER-AI")
 
-# 2. نظام الصفحات (التبديل بين التسجيل والرئيسية)
-selected = option_menu(
-    menu_title=None,
-    options=["تسجيل الدخول", "مولد الأفكار"],
-    icons=["person-circle", "robot"],
-    orientation="horizontal",
-)
+# منطقة العمل الرئيسية (كما في أسهمك)
+# نستخدم أعمدة لتوزيع الصورة والبيانات والمدخلات
+main_col, side_info_col = st.columns([3, 1])
 
-# 3. محتوى الصفحات
-if selected == "تسجيل الدخول":
-    st.header("مرحباً بك في SPIDER-AI")
-    st.text_input("البريد الإلكتروني")
-    st.text_input("كلمة المرور", type="password")
-    st.button("دخول")
-    st.info("ليس لديك حساب؟ سجل الآن")
-
-elif selected == "مولد الأفكار":
-    st.header("لوحة التحكم: مولد التطبيقات")
+with main_col:
+    # منطقة كتابة الفكرة (الوسط)
+    user_idea = st.text_area("اكتب فكرتك هنا لتوليد التطبيق أو اللعبة:", height=200, placeholder="مثال: أريد لعبة سباق سيارات بسيطة...")
     
-    # تقسيم الشاشة (يتجاوب تلقائياً مع الموبايل)
-    left_col, right_col = st.columns([2, 1])
-    
-    with left_col:
-        idea = st.text_area("اكتب فكرتك هنا...", height=150)
-        if st.button("توليد التطبيق 🚀"):
-            st.success("جاري التفكير في فكرتك...")
-            
-    with right_col:
-        st.subheader("الأدوات المتاحة")
-        st.write("✅ توليد أكواد")
-        st.write("✅ تحسين التصميم")
+    # زر التنفيذ
+    if st.button("🚀 توليد المشروع الآن"):
+        st.success("تم استلام الفكرة! جاري المعالجة...")
+        # هنا سيظهر لاحقاً عرض النتائج/الصور
+
+with side_info_col:
+    # معلومات إضافية عن الموقع
+    st.info("معلومات عن الموقع")
+    st.write("هذا الموقع يساعدك في تحويل أفكارك إلى واقع برمجي بسرعة.")
+
+# تذييل الصفحة
+st.markdown("---")
+st.caption("SPIDER-AI - جميع الحقوق محفوظة")
