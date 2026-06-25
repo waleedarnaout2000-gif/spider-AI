@@ -1,120 +1,82 @@
 import streamlit as st
-import streamlit.components.v1 as components
-import random
 
-st.set_page_config(page_title="SPIDER-AI | Next-Gen Engine", layout="wide")
+# إعداد الصفحة لتكون واسعة وتدعم التأثيرات البصرية
+st.set_page_config(page_title="SPIDER-AI", layout="wide")
 
-# استخدام CSS متقدم لتنفيذ تصميم الـ Spider Web والـ Glassmorphism
+# محرك الستايلات المتطور (Glassmorphism + Scroll Animations)
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-    
-    :root {
-        --bg-color: #05070a;
-        --accent: #00d4ff;
-        --glass: rgba(255, 255, 255, 0.03);
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;700&display=swap');
     
     .stApp {
-        background-color: var(--bg-color);
-        background-image: 
-            radial-gradient(circle at 50% 50%, #0c1524 0%, #05070a 100%);
-        overflow: hidden;
-    }
-    
-    /* تأثير الشبكة العنكبوتية المتقدم */
-    .spider-web {
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-image: radial-gradient(var(--accent) 0.5px, transparent 0.5px);
-        background-size: 40px 40px;
-        opacity: 0.15;
-        pointer-events: none;
-        z-index: 0;
-    }
-
-    .main-wrapper {
-        position: relative;
-        z-index: 1;
-        max-width: 1200px;
-        margin: auto;
-        padding: 50px;
-    }
-    
-    h1 {
-        font-family: 'Inter', sans-serif;
-        font-size: 3.5rem !important;
-        font-weight: 800 !important;
+        background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+        font-family: 'Tajawal', sans-serif;
         color: white;
+    }
+    
+    /* تصميم الـ Hero Section (المركز) */
+    .hero {
         text-align: center;
-        margin-bottom: 2rem !important;
+        padding: 100px 20px;
+        animation: fadeIn 1.5s ease-out;
     }
     
-    .glass-box {
-        background: var(--glass);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255,255,255,0.1);
-        padding: 40px;
-        border-radius: 30px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    /* تأثير الانبثاق عند التمرير */
+    .feature-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 30px;
+        border-radius: 20px;
+        margin: 20px 0;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s;
     }
     
-    .stTextInput > div > div > input {
-        background: rgba(255,255,255,0.05) !important;
-        border: 1px solid rgba(255,255,255,0.1) !important;
-        color: white !important;
-        padding: 25px !important;
-        font-size: 1.1rem !important;
+    .scroll-reveal {
+        opacity: 1;
+        transform: translateY(20px);
     }
     
-    .footer {
-        text-align: center;
-        color: #444;
-        font-family: monospace;
-        margin-top: 50px;
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    
+    .chat-box {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid #38bdf8;
+        border-radius: 15px;
+        padding: 20px;
+        width: 80%;
+        margin: 0 auto;
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
     }
     </style>
 """, unsafe_allow_html=True)
 
-if 'history' not in st.session_state: st.session_state.history = []
-if 'current_code' not in st.session_state: st.session_state.current_code = "<!-- Project Initialized -->"
+# 1. قسم الواجهة الرئيسية (الهيرو)
+st.markdown("""
+    <div class="hero">
+        <h1>SPIDER-AI</h1>
+        <p style="font-size: 1.5rem; color: #94a3b8;">ابدأ ببرومبت واحد.. وغير كل شيء لاحقاً</p>
+    </div>
+""", unsafe_allow_html=True)
 
-st.markdown('<div class="spider-web"></div>', unsafe_allow_html=True)
+# 2. منطقة المحادثة (الأساس البرمجي)
+st.markdown('<div class="chat-box">', unsafe_allow_html=True)
+user_input = st.text_area("صف فكرتك وسنحولها لواقع..", height=150, label_visibility="collapsed")
+if st.button("توليد التطبيق 🚀"):
+    st.success("جاري بناء المحرك الخاص بك...")
+st.markdown('</div>', unsafe_allow_html=True)
 
-with st.container():
-    st.markdown('<div class="main-wrapper">', unsafe_allow_html=True)
-    st.markdown("<h1>Start with one prompt.<br>You can change everything later.</h1>", unsafe_allow_html=True)
-    
-    # تبويبات العمل
-    tab1, tab2 = st.tabs(["🌐 Web App Engine", "📱 Mobile App Engine"])
-    
-    with tab1:
-        st.markdown('<div class="glass-box">', unsafe_allow_html=True)
-        prompt = st.text_input("", placeholder="Describe your web idea...", key="main_prompt")
-        
-        if st.button("Generate Experience 🚀"):
-            # محرك توليد الكود (الأساس)
-            st.session_state.current_code = f"""
-            <div style="background:black; color:white; padding:20px; font-family:monospace; border-radius:10px;">
-                <h2>Project: {prompt}</h2>
-                <p>Generating intelligent components...</p>
-                <div style="width:100%; height:20px; background:grey;">
-                    <div style="width:100%; height:100%; background:cyan;"></div>
-                </div>
-                <p>Engine initialized successfully.</p>
-            </div>
-            """
-            st.success("Engine deployed.")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    with tab2:
-        st.markdown('<div class="glass-box">', unsafe_allow_html=True)
-        st.text_input("", placeholder="Describe your mobile idea...", key="mobile_prompt")
-        st.markdown('</div>', unsafe_allow_html=True)
+# 3. قسم الانبثاق (المعلومات والمميزات)
+st.markdown("<br><br><br>", unsafe_allow_html=True)
+st.markdown("### 🕸️ اكتشف قدرات المنصة")
 
-    # المعاينة (الأساس)
-    st.markdown("### 🖥️ Live Preview", unsafe_allow_html=True)
-    components.html(st.session_state.current_code, height=300)
+cols = st.columns(3)
+with cols[0]:
+    st.markdown('<div class="feature-card"><h3>محرك ذكي</h3><p>توليد كود لحظي</p></div>', unsafe_allow_html=True)
+with cols[1]:
+    st.markdown('<div class="feature-card"><h3>معاينة حية</h3><p>شاهد تطبيقك فوراً</p></div>', unsafe_allow_html=True)
+with cols[2]:
+    st.markdown('<div class="feature-card"><h3>تعديل مرن</h3><p>تحكم بكل بكسل</p></div>', unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('<div class="footer">SPIDER-AI // GENERATIVE ENGINE // V.2.0</div>', unsafe_allow_html=True)
+# تذييل الصفحة
+st.markdown("<br><br><center>© 2026 SPIDER-AI Engine</center>", unsafe_allow_html=True)
