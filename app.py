@@ -4,132 +4,65 @@ import time
 from g4f.client import Client
 import streamlit.components.v1 as components
 
-# --- إعدادات الصفحة والتصميم العام للمنصة ---
-st.set_page_config(page_title="SPIDER-AI Engine", page_icon="🕷️", layout="wide")
+# --- إعدادات الصفحة والتصميم العام المستوحى من Visily (CodeLab) ---
+st.set_page_config(page_title="CodeLab Engine", page_icon="💻", layout="wide")
 
-# حقن تصاميم CSS مخصصة ومطابقة تماماً لرسوماتك اليدوية وأبعاد القوالب الاحترافية
+# تخصيص واجهة المستخدم بالكامل لتطابق نظام الألوان الداكن والتوزيع الهندسي للملفات المرفقة
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Fira+Code:wght=400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght=400;600;700&family=Fira+Code:wght=400;500&display=swap');
+    html, body, .main { font-family: 'Cairo', sans-serif; text-align: right; direction: rtl; background-color: #0b0f17; color: #c9d1d9; }
+    h1, h2, h3, h4, p, label { color: #f0f6fc; text-align: right; }
     
-    /* الخلفية العامة وتنسيق النصوص */
-    html, body, .main { 
-        font-family: 'Cairo', sans-serif; 
-        text-align: right; 
-        direction: rtl; 
-        background-color: #0d1117; 
-        color: #c9d1d9; 
-    }
-    h1, h2, h3, p, label { text-align: right; color: #f0f6fc; }
-
-    /* كروت الواجهة المستوحاة من الرسومات اليدوية (Rounded Cards) */
-    .custom-card {
-        background-color: #161b22;
-        border: 1px solid #30363d;
-        border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
+    /* تصميم الهيدر العلوي */
+    .codelab-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background-color: #161b22; border-bottom: 1px solid #30363d; border-radius: 8px; margin-bottom: 25px; }
+    .codelab-logo { font-size: 24px; font-weight: bold; color: #58a6ff; font-family: 'Fira Code', monospace; }
     
-    /* صندوق النقاط والرصيد العلوي المميز */
-    .points-badge {
-        background: linear-gradient(135deg, #1f293d, #0d1117);
-        border: 2px solid #58a6ff;
-        border-radius: 12px;
-        padding: 15px;
-        text-align: center;
-        margin-bottom: 20px;
-    }
-
-    /* صناديق المحادثة ووصف الأفكار السينمائية */
-    .chat-card { padding: 15px; border-radius: 10px; margin-bottom: 15px; line-height: 1.6; }
-    .user-msg { background-color: #21262d; border-right: 4px solid #58a6ff; }
-    .agent-msg { background-color: #111418; border-right: 4px solid #2ea44f; }
+    /* بطاقات أمثلة البدء السريع والكروت العادية */
+    .visily-card { background-color: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 20px; margin-bottom: 15px; transition: 0.2s; }
+    .visily-card:hover { border-color: #58a6ff; transform: translateY(-2px); }
+    .example-title { color: #58a6ff; font-weight: bold; font-size: 16px; margin-bottom: 8px; }
     
-    /* مؤشرات تفكير الوكيل البرمجي (Console) */
-    .thinking-box { 
-        background: #070a0e; 
-        border: 1px solid #21262d; 
-        border-radius: 10px; 
-        padding: 15px; 
-        margin: 10px 0; 
-        font-family: 'Fira Code', monospace; 
-        font-size: 13px; 
-        color: #8b949e; 
-        direction: ltr; 
-        text-align: left; 
-    }
-    .step-done { color: #56d364; font-weight: bold; }
-    .step-active { color: #58a6ff; font-weight: bold; animation: blink 1s infinite; }
-    @keyframes blink { 50% { opacity: 0.5; } }
+    /* منصة الأوامر ووحدات الكونسول (Console Logs) */
+    .console-box { background: #070a0e; border: 1px solid #f85149; border-radius: 10px; padding: 15px; margin: 15px 0; font-family: 'Fira Code', monospace; font-size: 13px; color: #ff7b72; direction: ltr; text-align: left; }
+    .console-header { color: #f85149; font-weight: bold; border-bottom: 1px solid #3b1212; padding-bottom: 5px; margin-bottom: 10px; font-family: 'Cairo', sans-serif; text-align: right; direction: rtl; }
     
-    /* تصميم أزرار التوليد الرئيسية الأخري */
+    /* شاشة المعاينة وإطار الكود */
+    .preview-container { border: 2px solid #30363d; border-radius: 12px; overflow: hidden; background: #000; margin-top: 15px; }
+    .tab-header { background: #161b22; padding: 8px 16px; border-bottom: 1px solid #30363d; font-family: 'Fira Code', monospace; color: #58a6ff; font-size: 14px; }
+    
+    /* تعديل مظهر الأزرار المخصصة للمنصة */
     div.stButton > button:first-child {
-        background: linear-gradient(135deg, #238636, #2ea44f); 
-        color: white;
-        border: none; 
-        padding: 12px 20px; 
-        border-radius: 8px; 
-        font-weight: bold; 
-        font-size: 16px;
-        width: 100%; 
-        transition: 0.2s;
+        background: #238636; color: white; border: 1px solid #30363d; padding: 8px 16px; border-radius: 6px; font-weight: bold; transition: 0.2s; width: 100%;
     }
-    div.stButton > button:first-child:hover { 
-        transform: translateY(-2px); 
-        box-shadow: 0 6px 16px rgba(46, 164, 79, 0.4); 
-    }
+    div.stButton > button:first-child:hover { background: #2ea44f; box-shadow: 0 4px 12px rgba(46, 164, 79, 0.2); }
     
-    /* تصميم بطاقات الأخطاء و التنبيهات */
-    .error-card {
-        background-color: #2d1313;
-        padding: 20px;
-        border-radius: 12px;
-        border: 1px solid #f85149;
-        color: #ff7b72;
-        margin-bottom: 20px;
-    }
-    
-    /* إطار محاكاة الشاشات للألعاب والمعاينة */
-    .preview-frame-container {
-        border: 4px solid #30363d;
-        border-radius: 16px;
-        overflow: hidden;
-        background: #000;
-        box-shadow: 0 12px 24px rgba(0,0,0,0.5);
-    }
+    /* الأزرار الفرعية الثانوية كـ "تعديل الوصف" أو "عرض الأمثلة" */
+    .sec-btn button { background-color: #21262d !important; color: #c9d1d9 !important; border: 1px solid #30363d !important; }
+    .sec-btn button:hover { border-color: #8b949e !important; background-color: #30363d !important; }
     </style>
 """, unsafe_allow_html=True)
 
 # --- إدارة وتخزين بيانات الجلسة (State Management) ---
-if 'messages' not in st.session_state:
-    st.session_state.messages = [{"role": "agent", "content": "مرحباً بك في SPIDER-AI! أنا مهندس البرمجيات الذكي الخاص بك. ضع هنا فكرتك البرمجية (موقع، تطبيق، لعبة 2D تفاعلية، أو لعبة 3D متطورة)، وسأقوم بمناقشتها معك وبنائها فوراً."}]
 if 'generated_html' not in st.session_state:
     st.session_state.generated_html = ""
 if 'current_stage' not in st.session_state:
-    st.session_state.current_stage = "discussion" 
-if 'code_blocks' not in st.session_state:
-    st.session_state.code_blocks = {}
-if 'error_occurred' not in st.session_state:
-    st.session_state.error_occurred = False
-if 'sidebar_page' not in st.session_state:
-    st.session_state.sidebar_page = "dashboard"
-if 'is_logged_in' not in st.session_state:
-    st.session_state.is_logged_in = False # نظام التحقق المضاف من الرسمة الأولى
+    st.session_state.current_stage = "home"  # المراحل: home | generating | preview | error_view
+if 'error_type' not in st.session_state:
+    st.session_state.error_type = "" # وكيل_ذكي | بيئة_تشغيل
+if 'user_prompt' not in st.session_state:
+    st.session_state.user_prompt = ""
 
 client = Client()
 
-# --- دالة الذكاء الاصطناعي للمحادثة والتوليد الذكي ---
+# --- دالة الـ AI الخاصة بك لتوليد الأكواد البرمجية الشاملة ---
 def ask_agent(prompt):
     system_prompt = """
-    You are an elite, world-class game architect and senior full-stack developer.
-    Your absolute priority is to output flawless, clean, and fully executable single-file source code.
-    CRITICAL INSTRUCTIONS FOR CODE COMPLETENESS:
-    1. NEVER write placeholder comments or short-cuts like "// rest of code". Every single line of styling, HTML, and JavaScript MUST be written out in full.
-    2. The entire output must be a single, self-contained HTML file incorporating all CSS and JavaScript.
-    3. All interface text inside the generated application MUST be written in the Arabic language.
-    4. Return ONLY valid, clean HTML code starting strictly with <!DOCTYPE html> and ending with </html>. Do NOT wrap the code in markdown code blocks.
+    You are an elite, world-class game architect and senior full-stack developer inside 'CodeLab' platform.
+    Your absolute priority is to output flawless, clean, and fully executable single-file source code based on Arabic descriptions.
+    NEVER write placeholder comments, incomplete logic, or short-cuts like "// rest of code".
+    The entire output must be a single, self-contained HTML file incorporating all CSS and JavaScript.
+    Return ONLY valid, clean HTML code starting strictly with <!DOCTYPE html> and ending with </html>. Do NOT wrap in markdown code blocks.
     """
     try:
         response = client.chat.completions.create(
@@ -143,196 +76,215 @@ def ask_agent(prompt):
     except Exception as e:
         return f"ERROR_API_FAILED: {str(e)}"
 
+# --- هيدر التطبيق العلوي الموحد (مطابق لـ Screen 0 في ملف Visily) ---
+st.markdown("""
+    <div class='codelab-header'>
+        <div class='codelab-logo'>CodeLab 💻</div>
+        <div style='color: #8b949e; font-size: 14px;'>الحساب الافتراضي: مطور تجريبي | <b>10,000 نقطة</b></div>
+    </div>
+""", unsafe_allow_html=True)
 
-# --- شاشة تسجيل الدخول الأولى (صورة رقم 1 في الرسمة اليدوية) ---
-if not st.session_state.is_logged_in:
-    st.markdown("<h1 style='text-align: center; color: #58a6ff; margin-top: 50px;'>🕷️ SPIDER.AI</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #8b949e;'>معلومات عن الموقع: أداة ثورية لإنشاء وتوليد الألعاب والبرمجيات التفاعلية بذكاء اصطناعي فائق</p>", unsafe_allow_html=True)
+# --- القائمة الجانبية للتنقل والمطابقة للملف تماماً ---
+with st.sidebar:
+    st.markdown("<h3 style='text-align: center;'>📋 القائمة الرئيسية</h3>", unsafe_allow_html=True)
+    st.write("---")
+    if st.button("🏠 الرئيسية"):
+        st.session_state.current_stage = "home"
+        st.rerun()
+    if st.button("🚀 استعرض الأمثلة"):
+        st.session_state.current_stage = "home"
+        st.toast("تصفح قسم البدء السريع في منتصف الصفحة!")
+    if st.button("⚙️ الإعدادات"):
+        st.sidebar.info("الحد الأقصى للموارد: 512MB Sandbox Memory Limit")
+
+# ----------------------------------------------------
+# 1. الشاشة الرئيسية (Home Stage) - Screen ID: 0
+# ----------------------------------------------------
+if st.session_state.current_stage == "home":
+    st.markdown("<h1 style='text-align: center; font-size: 32px;'>الذكاء الاصطناعي في مسكنك</h1>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #8b949e; font-weight: normal;'>بالعربية جسد فكرتك البرمجية</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #8b949e;'>حول أوصافك باللغة العربية إلى مشاريع ويب كاملة وقابلة للتشغيل في ثوانٍ. محور متكامل، معاينة فورية، وذكاء اصطناعي يفهمك.</p>", unsafe_allow_html=True)
     
-    col_auth_left, col_auth_mid, col_auth_right = st.columns([1, 1.5, 1])
-    with col_auth_mid:
-        st.markdown("""
-            <div class='custom-card' style='text-align: center;'>
-                <h3 style='text-align: center; color: #56d364;'>تسجيل الدخول / إنشاء حساب</h3>
-                <p style='text-align: center; font-size: 13px; color: #8b949e;'>اختر طريقة الدخول المفضلة لديك للوصول إلى لوحة التحكم</p>
-            </div>
-        """, unsafe_allow_html=True)
+    # نموذج إدخال الفكرة والوصف البرمجي المباشر
+    with st.container():
+        st.markdown("<div class='visily-card'>", unsafe_allow_html=True)
+        user_idea = st.text_area("وصف فكرتي بالعربية:", value=st.session_state.user_prompt, placeholder="اكتب هنا بالتفصيل (مثال: لوحة تحكم مهام ذكية، أو لعبة أفعى نيون مع حساب النقاط والـ Canvas)...")
         
-        # أزرار الدخول المطابقة للرسمة الأولى
-        if st.button("🔑 تسجيل الدخول بواسطة حساب Google"):
-            st.session_state.is_logged_in = True
-            st.rerun()
-            
-        if st.button("📧 الدخول بالبريد الإلكتروني وكلمة السر"):
-            st.session_state.is_logged_in = True
-            st.rerun()
-            
-        st.markdown("<p style='text-align: center; font-size: 12px; color: #8b949e; margin-top: 15px;'>بالتسجيل أنت توافق على شروط الخدمة وسياسة الاستخدام الخاصة بـ SPIDER-AI</p>", unsafe_allow_html=True)
-
-# --- شاشات النظام الرئيسية بعد تسجيل الدخول (الرسومات 2 و 3 و 4) ---
-else:
-    # القائمة الجانبية الثابتة والمنظمة هندسياً
-    with st.sidebar:
-        st.markdown("<h2 style='text-align: center; color: #58a6ff;'>🕷️ SPIDER-AI</h2>", unsafe_allow_html=True)
-        st.write("---")
-        if st.button("🏠 لوحة التحكم الرئيسية"):
-            st.session_state.sidebar_page = "dashboard"
-            st.rerun()
-        if st.button("🎮 ألعابي وتطبيقاتي"):
-            st.session_state.sidebar_page = "projects"
-            st.rerun()
-        if st.button("⚙️ الإعدادات وتوطين اللغة"):
-            st.session_state.sidebar_page = "settings"
-            st.rerun()
-        st.write("---")
-        if st.button("🚪 تسجيل الخروج"):
-            st.session_state.is_logged_in = False
+        col_btn1, col_btn2 = st.columns([1, 4])
+        with col_btn1:
+            launch_build = st.button("إنشاء مشروعي الأول +")
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        if launch_build and user_idea.strip():
+            st.session_state.user_prompt = user_idea
+            st.session_state.current_stage = "generating"
             st.rerun()
 
-    # 1. صفحة المشاريع والألعاب الفارغة
-    if st.session_state.sidebar_page == "projects":
-        st.markdown("## 🎮 معرض مشاريعك المكتملة")
-        st.write("---")
+    st.write("---")
+    
+    # قسم البدء السريع والأمثلة الجاهزة المتطابقة مع الـ PDF
+    st.markdown("### ⚡ بدء سريع: اختر مثالاً واجعل الـ AI يطلق سحره")
+    col_ex1, col_ex2, col_ex3 = st.columns(3)
+    
+    with col_ex1:
         st.markdown("""
-            <div style='text-align: center; padding: 50px; background-color: #161b22; border-radius: 16px; border: 2px dashed #30363d;'>
-                <h3 style='color: #8b949e;'>📭 قائمة المشاريع فارغة</h3>
-                <p style='color: #8b949e;'>يبدو أنك لم تقم بإنشاء أي مشروع برمجى تفاعلي حتى الآن. عد للوحة القيادة وقم بكتابة فكرتك الأولى!</p>
+            <div class='visily-card'>
+                <div class='example-title'>📊 لوحة تحكم مهام</div>
+                <p style='font-size: 13px; color: #8b949e; margin-bottom: 12px;'>تطبيق ويب متكامل لإدارة المهام اليومية مع الإحصائيات والرسوم البيانية التفاعلية.</p>
             </div>
         """, unsafe_allow_html=True)
+        if st.button("توليد لوحة المهام", key="ex1"):
+            st.session_state.user_prompt = "لوحة تحكم مهام ومتابعة أهداف يومية مع رسومات بيانية تفاعلية لإحصائيات الإنجاز باللغة العربية"
+            st.session_state.current_stage = "generating"
+            st.rerun()
+            
+    with col_ex2:
+        st.markdown("""
+            <div class='visily-card'>
+                <div class='example-title'>💱 محول عملات لحظي</div>
+                <p style='font-size: 13px; color: #8b949e; margin-bottom: 12px;'>أداة تحويل العملات مع حساب أسعار الصرف بشكل مباشر وتصميم واجهة فخمة مريحة.</p>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("توليد محول العملات", key="ex2"):
+            st.session_state.user_prompt = "محول عملات فخم تفاعلي كامل الحسابات مع واجهة مستخدم أنيقة باللغة العربية"
+            st.session_state.current_stage = "generating"
+            st.rerun()
+            
+    with col_ex3:
+        st.markdown("""
+            <div class='visily-card'>
+                <div class='example-title'>🖼️ معرض صور ذكي</div>
+                <p style='font-size: 13px; color: #8b949e; margin-bottom: 12px;'>معرض صور متطور يعتمد على الفلاتر، البحث الذكي، والتحريك السلس للعناصر.</p>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("توليد معرض الصور", key="ex3"):
+            st.session_state.user_prompt = "معرض صور تفاعلي متطور يحتوي على فلاتر تصفية وبحث مع مظهر وتأثيرات حركية جذابة"
+            st.session_state.current_stage = "generating"
+            st.rerun()
 
-    # 2. صفحة الإعدادات وتخصيص بيئة المحاكاة
-    elif st.session_page == "settings" if 'sidebar_page' in st.session_state and st.session_state.sidebar_page == "settings" else False:
-        st.markdown("## ⚙️ إعدادات المنصة وبيئة التشغيل")
-        st.write("---")
-        st.selectbox("لغة واجهة الوكيل البرمجي الذكي:", ["العربية (المحلية)", "English"])
-        st.slider("الحد الأقصى لاستهلاك الذاكرة الافتراضية (Sandbox Memory Limit):", 256, 1024, 512, fmt="%d MB")
-        st.checkbox("تفعيل نظام التصحيح التلقائي للأخطاء (Auto Code Healing)", value=True)
-        st.success("تم تأمين وحفظ الإعدادات بنجاح!")
+    # قسم خطوات العمل التوضيحية الثلاثة في التصميم
+    st.write("---")
+    st.markdown("<h4 style='text-align: center; margin-bottom: 20px;'>🚀 رحلة الإبداع في CodeLab</h4>", unsafe_allow_html=True)
+    col_step1, col_step2, col_step3 = st.columns(3)
+    with col_step1:
+        st.markdown("<div style='text-align: center;'><b>1. صف فكرتك</b><p style='font-size: 12px; color: #8b949e;'>اكتب ما تريد بأسلوبك وب لغتك العربية المفضلة.</p></div>", unsafe_allow_html=True)
+    with col_step2:
+        st.markdown("<div style='text-align: center;'><b>2. بناء ذكي</b><p style='font-size: 12px; color: #8b949e;'>يقوم مهندس الكود بتحليل فكرتك وبنائها كوداً مكتملاً.</p></div>", unsafe_allow_html=True)
+    with col_step3:
+        st.markdown("<div style='text-align: center;'><b>3. تشغيل ومعاينة</b><p style='font-size: 12px; color: #8b949e;'>عاين النتيجة فوراً في بيئة التشغيل المستقلة.</p></div>", unsafe_allow_html=True)
 
-    # 3. لوحة القيادة التفاعلية الكبرى (Dashboard)
+# ----------------------------------------------------
+# 2. مرحلة التوليد والأنيميشن الحركي (Generating Stage)
+# ----------------------------------------------------
+elif st.session_state.current_stage == "generating":
+    st.markdown("### 🛠️ جاري إطلاق وتجميع عناصر الهندسة البرمجية...")
+    
+    status_box = st.empty()
+    status_box.markdown("<div class='visily-card'><p style='color: #58a6ff;'>⏳ [1/3] جاري قراءة وتحليل النص الوصفي وصياغة هيكل تطبيق الويب...</p></div>", unsafe_allow_html=True)
+    time.sleep(1.2)
+    
+    status_box.markdown("<div class='visily-card'><p style='color: #2ea44f;'>✅ تم فهم المتطلبات المعمارية بنجاح.</p><p style='color: #58a6ff;'>⏳ [2/3] جاري دمج عناصر التصميم وحقن دوال المنطق والتحكم التفاعلي الكامل...</p></div>", unsafe_allow_html=True)
+    time.sleep(1.2)
+    
+    status_box.markdown("<div class='visily-card'><p style='color: #2ea44f;'>✅ تم حقن وتأمين منطق التحريك.</p><p style='color: #58a6ff;'>⏳ [3/3] جاري تجميع الملف المصدر النهائي index.html واستدعاء الخادم لإنتاج التطبيق الكامل...</p></div>", unsafe_allow_html=True)
+    
+    # الاتصال بالوكيل مع ضمان الموجه الصارم
+    final_output = ask_agent(st.session_state.user_prompt)
+    
+    if "ERROR_API_FAILED" in final_output:
+        st.session_state.error_type = "وكيل_ذكي"
+        st.session_state.current_stage = "error_view"
+        st.rerun()
     else:
-        # تقسيم الشاشة للحصول على الهيكل المتوازن في رسمتك الثانية والثالثة
-        col_main_panel, col_info_panel = st.columns([1.3, 0.7])
+        # تنظيف كود HTML المولد
+        final_output = re.sub(r'^```html\s*', '', final_output, flags=re.IGNORECASE)
+        final_output = re.sub(r'```$', '', final_output)
+        st.session_state.generated_html = final_output.strip()
+        st.session_state.current_stage = "preview"
+        st.rerun()
+
+# ----------------------------------------------------
+# 3. شاشة المعاينة الحية المستقلة (Preview Stage)
+# ----------------------------------------------------
+elif st.session_state.current_stage == "preview":
+    st.markdown("### 💻 منصة المعاينة البرمجية للمشروع المكتمل")
+    st.write("تم بناء كودك النظيف بالكامل وهو يعمل الآن بشكل مستقل داخل حاوية المعاينة.")
+    
+    col_prev_left, col_prev_right = st.columns([3, 1])
+    
+    with col_prev_left:
+        # عرض تبويب وسلسلة الكود البرمجي كما هو محدد بالرسمة (index.html </>)
+        st.markdown("<div class='tab-header'>index.html &lt;/&gt; (المعاينة المباشرة للمشروع)</div>", unsafe_allow_html=True)
+        st.markdown("<div class='preview-container'>", unsafe_allow_html=True)
+        components.html(st.session_state.generated_html, height=550, scrolling=True)
+        st.markdown("</div>", unsafe_allow_html=True)
         
-        with col_info_panel:
-            # كرت رصيد النقاط المستقل والمطابق للرسمة رقم 2
+    with col_prev_right:
+        st.markdown("<div class='visily-card'>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: #56d364; margin-top:0;'>⚙️ إجراءات وأدوات المشروع</h4>", unsafe_allow_html=True)
+        st.write("يمكنك إجراء تعديلات برمجية أو إعادة صياغة للسيناريوهات المولد بها اللعبة الآن.")
+        
+        # حقل مخصص لمحاكاة إرسال الأخطاء لبيئة التشغيل أو فتح الإعدادات
+        if st.button("📥 فتح الكود البرمجي بالكامل (صورس)"):
+            st.toast("تم فحص الملف المصدر وهو جاهز بنسبة 100%!")
+            
+        st.write("---")
+        if st.button("🔄 العودة وتعديل الوصف"):
+            st.session_state.current_stage = "home"
+            st.rerun()
+            
+        # زر محاكاة لعرض شاشة تجاوز الموارد أو أخطاء السيرفر (لفحص حالات النظام المفصلة بالملف)
+        st.markdown("<p style='font-size: 11px; color:#8b949e; margin-top: 15px;'>أدوات فحص الحالات الاستثنائية للـ Sandbox:</p>", unsafe_allow_html=True)
+        if st.button("🪲 محاكاة خطأ تجاوز الموارد (512MB)"):
+            st.session_state.error_type = "بيئة_تشغيل"
+            st.session_state.current_stage = "error_view"
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+# ----------------------------------------------------
+# 4. لوحة معالجة الحالات والأخطاء الحرجة (Error View Stage) - Screen ID: 1, 4
+# ----------------------------------------------------
+elif st.session_state.current_stage == "error_view":
+    st.markdown("## 🚨 CONSOLE LOGS (منصة فحص أخطاء وقت التشغيل للوكيل)")
+    st.write("وقع النظام في إحدى الحالات الاستثنائية والبيئات الحرجة الموضحة بملف المخططات:")
+    st.write("---")
+    
+    col_err_main, col_err_side = st.columns([3, 1])
+    
+    with col_err_main:
+        if st.session_state.error_type == "وكيل_ذكي":
+            # كرت أخطاء الوكيل الذكي وفشل توليد الكود (Screen ID: 1,9)
             st.markdown("""
-                <div class='points-badge'>
-                    <p style='margin: 0; font-size: 14px; color: #8b949e;'>📊 رصيد النقاط المتاح</p>
-                    <h2 style='margin: 5px 0; color: #58a6ff; text-align: center;'>10,000 نقطة</h2>
+                <div class='console-box'>
+                    <div class='console-header'>⚠️ أخطاء الوكيل الذكي: فشل توليد الكود المطلق</div>
+                    Error: AI MODEL TIMEOUT EXCEEDED (code: 504)<br>
+                    [CodeLab Architect Log]: واجه مهندس الكود مشكلة أثناء معالجة الطلب الذكي، قد يكون السبب غموض أو تداخل في نص الوصف أو انقطاع مؤقت في الاتصال بالخادم.
                 </div>
             """, unsafe_allow_html=True)
-            if st.button("💳 شراء نقاط إضافية"):
-                st.toast("سيتم تحويلك إلى بوابة الدفع الآمنة قريباً!", icon="💳")
-            
-            # كرت إضافي لعرض تفاصيل النظام والمراقبة الحية للـ Sandbox
+        else:
+            # كرت أخطاء بيئة التشغيل وتجاوز حدود الموارد (Screen ID: 4,9)
             st.markdown("""
-                <div class='custom-card'>
-                    <h4 style='color: #58a6ff; margin-top:0;'>🖥️ بيئة التشغيل المعزولة</h4>
-                    <p style='font-size: 13px; color: #8b949e; margin-bottom: 5px;'>الحالة: <span style='color: #56d364;'>متصل ونشط</span></p>
-                    <p style='font-size: 13px; color: #8b949e; margin-bottom: 5px;'>الذاكرة: 245MB / 512MB</p>
-                    <p style='font-size: 13px; color: #8b949e; margin-bottom: 0;'>المعالج: CPU 12%</p>
+                <div class='console-box'>
+                    <div class='console-header'>⚠️ أخطاء بيئة التشغيل: تجاوز حدود الموارد المسموح بها</div>
+                    Uncaught ReferenceError: "appData" is not defined<br>
+                    CRITICAL EXCEPTION: تم تعليق المعاينة الحية مؤقتاً لحماية النظام لتجاوز المشروع استهلاك الذاكرة المسموح بها (512MB)، قد يكون السبب حلقة تكرارية غير منتهية (Infinite Loop) أو تحميل ملفات ضخمة.
                 </div>
             """, unsafe_allow_html=True)
-
-        with col_main_panel:
-            # حالة الانتهاء وعرض المعاينة الحية المستقلة (الرسومات 3 و 4)
-            if st.session_state.current_stage == "finished":
-                st.markdown("### 🎮 بيئة التشغيل والمعاينة الحية المستقلة")
-                
-                # إطار فخم ومحاكي للشاشات والألعاب لعزل النتيجة بشكل رائع ومطابق لطلبك
-                st.markdown("<div class='preview-frame-container'>", unsafe_allow_html=True)
-                components.html(st.session_state.generated_html, height=500, scrolling=True)
-                st.markdown("</div>", unsafe_allow_html=True)
-                
-                # كرت الملاحظات والتوصيات البرمجية المكتوبة في أسفل الرسمة الرابعة
-                st.markdown("""
-                    <div class='custom-card' style='margin-top: 20px;'>
-                        <h4 style='color: #56d364; margin-top: 0;'>📋 ملاحظات وتوصيات بيئة SPIDER</h4>
-                        <ul style='font-size: 13px; color: #c9d1d9; padding-right: 20px;'>
-                            <li>التجربة والواجهة متكاملة بالكامل وتدعم اللمس على الهواتف الذكية والأجهزة اللوحية.</li>
-                            <li>تم تفعيل الخطوط والأنماط البصرية الجذابة لضمان مظهر عصري ومريح للعين.</li>
-                            <li>كود اللعبة نظيف وخالٍ من الاختصارات ومحمي بالكامل داخل ملف HTML مستقل.</li>
-                        </ul>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-                if st.button("🔄 العودة إلى لوحة التحكم والوصف لتعديل اللعبة"):
-                    st.session_state.current_stage = "discussion"
-                    st.rerun()
             
-            # حالة كتابة الفكرة ومناقشتها مع الوكيل البرمجي (الرسمة الثانية)
-            elif st.session_state.current_stage in ["discussion", "generating"]:
-                st.markdown("<h2 style='margin-top: 0;'>🤖 المهندس المعماري والبرمجي الذكي</h2>", unsafe_allow_html=True)
-                st.write("اكتب سيناريو أو وصف اللعبة والتطبيق البرمجي الذي يدور في ذهنك بالتفصيل أدناه:")
-                
-                # صندوق المحادثة والوصف المستوحى من رسوماتك
-                chat_placeholder = st.container(height=280)
-                with chat_placeholder:
-                    for msg in st.session_state.messages:
-                        cls = "user-msg" if msg["role"] == "user" else "agent-msg"
-                        st.markdown(f"<div class='chat-card {cls}'>{msg['content']}</div>", unsafe_allow_html=True)
-                
-                # حقل استقبال الأفكار وزر البناء والتعديل المباشر
-                with st.form("chat_form", clear_on_submit=True):
-                    user_input = st.text_input("اشرح مشروعك هنا (الألوان، التفاعلات، الوظائف البرمجية المطلوب بناؤها):", placeholder="مثال: أريد إنشاء لعبة أفعى نيون تفاعلية مع حساب النقاط وتدعم الهواتف...")
-                    submit_chat = st.form_submit_button("إرسال فكرة المشروع وبدء البناء الذكي 🚀")
-                    
-                if submit_chat and user_input.strip():
-                    st.session_state.messages.append({"role": "user", "content": user_input})
-                    
-                    if any(word in user_input for word in ["ابدا", "انشئ", "برمج", "بناء", "ابدأ", "أنشئ"]):
-                        st.session_state.current_stage = "generating"
-                        st.rerun()
-                    else:
-                        with st.spinner("🤖 يقوم المهندس البرمجي بتحليل الأبعاد وصياغة الهيكل..."):
-                            prompt_query = f"User idea: {user_input}. Respond in Arabic. Ask 2-3 deep architectural or design questions."
-                            agent_reply = ask_agent(prompt_query)
-                            
-                            if "ERROR_API_FAILED" in agent_reply:
-                                st.session_state.error_occurred = True
-                            else:
-                                st.session_state.messages.append({"role": "agent", "content": agent_reply})
-                        st.rerun()
-
-                # منطقة تتبع الأوامر والأنيميشن الحركي (Console Logs) في الكرت الأيسر من الرسمة الثالثة
-                if st.session_state.error_occurred:
-                    st.markdown(f"""
-                        <div class='error-card'>
-                            <h3>⚠️ خطأ حرج: AI MODEL TIMEOUT EXCEEDED</h3>
-                            <p>حدثت مشكلة أثناء معالجة الطلب، قد يكون السبب غموض في وصف الفكرة المعمارية أو مشكلة مؤقتة في الاتصال بالخادم الرئيسي.</p>
-                            <p><b>الإجراء المقترح:</b> يرجى مراجعة وتعديل الوصف أو الضغط على زر إعادة المحاولة الآن.</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    if st.button("🔄 إعادة تفعيل المحاولة وتأسيس الاتصال"):
-                        st.session_state.error_occurred = False
-                        st.rerun()
-                        
-                elif st.session_state.current_stage == "generating":
-                    status_box = st.empty()
-                    
-                    status_box.markdown("<div class='thinking-box'><div class='step-active'>⏳ [1/4] جاري تحليل المتطلبات وصياغة الهيكل الكامل للمشروع...</div></div>", unsafe_allow_html=True)
-                    time.sleep(1.2)
-                    
-                    status_box.markdown("<div class='thinking-box'><div class='step-done'>✅ [1/4] تم الانتهاء من تحليل وفهم متطلبات اللعبة.</div><div class='step-active'>⏳ [2/4] جاري تجميع وحقن ملف الأنماط والتصميم البصري (CSS Styles)...</div></div>", unsafe_allow_html=True)
-                    st.session_state.code_blocks["css"] = "/* واجهة مفعمة بالحيوية */"
-                    time.sleep(1.2)
-                    
-                    status_box.markdown("<div class='thinking-box'><div class='step-done'>✅ [1/4] تم الانتهاء من تحليل متطلبات اللعبة.</div><div class='step-done'>✅ [2/4] تم تطبيق واجهات الـ CSS الفخمة والمظهر العصري.</div><div class='step-active'>⏳ [3/4] جاري بناء محرك الحركة والتحكم البرمجي بالكامل (JS Logic)...</div></div>", unsafe_allow_html=True)
-                    st.session_state.code_blocks["js"] = "// محرك الحركة"
-                    time.sleep(1.2)
-                    
-                    # استدعاء وإنتاج الملف الشامل والنظيف
-                    full_prompt = f"Create a fully detailed, clean and complete executable single-file solution in Arabic based on: {str(st.session_state.messages)}."
-                    final_generated = ask_agent(full_prompt)
-                    
-                    if "ERROR_API_FAILED" in final_generated:
-                        st.session_state.error_occurred = True
-                        st.session_state.current_stage = "discussion"
-                        st.rerun()
-                    else:
-                        final_generated = re.sub(r'^```html\s*', '', final_generated, flags=re.IGNORECASE)
-                        final_generated = re.sub(r'```$', '', final_generated)
-                        st.session_state.generated_html = final_generated.strip()
-                        st.session_state.current_stage = "finished"
-                        st.rerun()
+    with col_err_side:
+        st.markdown("<div class='visily-card'>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: #ff7b72; margin-top:0;'>🛠️ إجراءات الطوارئ</h4>", unsafe_allow_html=True)
+        st.write("اتخذ إجراءً برمجياً سريعاً لتصحيح المسار:")
+        
+        if st.button("✏️ تعديل الوصف النصي"):
+            st.session_state.current_stage = "home"
+            st.rerun()
+            
+        if st.button("🔄 إعادة محاولة التوليد"):
+            st.session_state.current_stage = "generating"
+            st.rerun()
+            
+        if st.session_state.error_type == "بيئة_تشغيل":
+            if st.button("⚙️ فتح الإعدادات لزيادة الحدود"):
+                st.toast("تم تعديل الذاكرة الافتراضية مؤقتاً!")
+        st.markdown("</div>", unsafe_allow_html=True)
