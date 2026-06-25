@@ -1,64 +1,89 @@
 import streamlit as st
 import re
+import time
 from g4f.client import Client
 import streamlit.components.v1 as components
 
-# إعداد الصفحة لتكون بملء الشاشة
-st.set_page_config(page_title="SPIDER-AI", layout="wide")
+# --- إعدادات الصفحة ---
+st.set_page_config(page_title="SPIDER-AI | Next Gen", layout="wide", page_icon="🕷️")
 
-# تصميم بصري احترافي (السر في الـ CSS هنا)
+# --- التصميم الاحترافي (CSS) ---
 st.markdown("""
     <style>
-    /* تغيير الخطوط والخلفية */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap');
     
-    .stApp { background-color: #09090b; color: #f4f4f5; font-family: 'Inter', sans-serif; }
+    :root { --bg-dark: #09090b; --panel: #18181b; --accent: #2ea44f; --text: #f4f4f5; }
     
-    /* جعل الـ Sidebar يبدو كجزء من IDE */
-    [data-testid="stSidebar"] { background-color: #18181b; border-right: 1px solid #27272a; padding: 20px; }
+    .stApp { background-color: var(--bg-dark); color: var(--text); font-family: 'Inter', sans-serif; }
     
-    /* تصميم بطاقة المحادثة */
-    .chat-bubble { background: #27272a; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 14px; border-left: 3px solid #2ea44f; }
+    /* الـ Sidebar الاحترافي */
+    [data-testid="stSidebar"] { background-color: var(--panel); border-right: 1px solid #27272a; padding: 1rem; }
     
-    /* زر التوليد بتصميم عصري */
-    div.stButton > button { background: #2ea44f; color: white; border: none; border-radius: 6px; padding: 10px 20px; width: 100%; font-weight: 600; }
-    div.stButton > button:hover { background: #238636; }
+    /* بطاقات المحادثة الأنيقة */
+    .chat-bubble { background: #27272a; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; border-left: 4px solid var(--accent); font-size: 14px; }
     
-    /* منطقة المعاينة */
-    .preview-box { border: 1px solid #27272a; border-radius: 12px; overflow: hidden; background: white; }
+    /* منطقة التفكير */
+    .thinking-box { background: #000; border: 1px solid #333; padding: 1rem; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a1a1aa; }
+    
+    /* الأزرار */
+    div.stButton > button { background: var(--accent); color: white; border: none; border-radius: 6px; width: 100%; height: 45px; font-weight: 600; transition: 0.3s; }
+    div.stButton > button:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(46, 164, 79, 0.3); }
+    
+    /* تنظيف الواجهة */
+    #MainMenu {visibility: hidden;} footer {visibility: hidden;}
     </style>
 """, unsafe_allow_html=True)
 
-# إدارة الحالة
+# --- إدارة الجلسة ---
 if 'messages' not in st.session_state: st.session_state.messages = []
+if 'current_stage' not in st.session_state: st.session_state.current_stage = "discussion"
 if 'generated_html' not in st.session_state: st.session_state.generated_html = ""
 
-# الواجهة الجانبية (للدردشة)
+client = Client()
+
+# --- دالة الذكاء الاصطناعي (كما هي، مع تحسين البرومبت) ---
+def ask_agent(prompt):
+    system_prompt = "You are a senior elite developer. Output ONLY clean, full HTML/CSS/JS in one file. No markdown, no placeholders. Arabic UI."
+    try:
+        response = client.chat.completions.create(model="gpt-4o", messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}])
+        return response.choices[0].message.content.strip()
+    except: return "ERROR"
+
+# --- الواجهة ---
 with st.sidebar:
-    st.markdown("### 🕸️ SPIDER-AI")
-    st.caption("محرك التجسيد البرمجي")
-    
-    chat_box = st.container(height=400)
+    st.markdown("## 🕷️ SPIDER-AI")
+    st.markdown("---")
+    chat_placeholder = st.container(height=450)
     for msg in st.session_state.messages:
-        chat_box.markdown(f"<div class='chat-bubble'>{msg}</div>", unsafe_allow_html=True)
-        
-    user_input = st.text_area("وصف الفكرة:", height=100)
-    if st.button("تجسيد المشروع"):
-        st.session_state.messages.append(user_input)
-        # هنا يتم استدعاء التوليد
-        client = Client()
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": f"Write a complete HTML/CSS/JS file for: {user_input}"}]
-        )
-        code = response.choices[0].message.content
-        st.session_state.generated_html = re.sub(r'^```html\s*', '', code).replace('```', '')
+        chat_placeholder.markdown(f"<div class='chat-bubble'>{msg['content']}</div>", unsafe_allow_html=True)
+
+    with st.form("input_form", clear_on_submit=True):
+        user_input = st.text_input("أدخل فكرتك:", placeholder="مثال: لعبة نيون أونلاين...")
+        if st.form_submit_button("بدء التجسيد"):
+            st.session_state.messages.append({"role": "user", "content": user_input})
+            st.session_state.current_stage = "generating"
+            st.rerun()
+
+# --- منطقة العرض الرئيسية ---
+if st.session_state.current_stage == "generating":
+    st.markdown("### 🛠️ المحرك البرمجي يعمل...")
+    status = st.empty()
+    status.markdown("<div class='thinking-box'>جاري تحليل البنية الأساسية...</div>", unsafe_allow_html=True)
+    time.sleep(1)
+    status.markdown("<div class='thinking-box'>توليد الواجهة التفاعلية...</div>", unsafe_allow_html=True)
+    
+    code = ask_agent(f"Generate full project for: {st.session_state.messages[-1]['content']}")
+    st.session_state.generated_html = re.sub(r'^```html\s*', '', code).replace('```', '')
+    st.session_state.current_stage = "finished"
+    st.rerun()
+
+elif st.session_state.current_stage == "finished":
+    st.markdown("### 🖥️ النتيجة النهائية (Live Preview)")
+    components.html(st.session_state.generated_html, height=700, scrolling=True)
+    if st.button("تطوير فكرة جديدة"):
+        st.session_state.current_stage = "discussion"
         st.rerun()
 
-# منطقة العرض الرئيسية (المعاينة)
-st.markdown("### 🖥️ بيئة التجسيد الفوري")
-if st.session_state.generated_html:
-    with st.container():
-        components.html(st.session_state.generated_html, height=650)
 else:
-    st.info("💡 انتظر التوجيهات... ابدأ بوصف فكرتك في القائمة الجانبية.")
+    st.title("مرحباً بك في عالم التجسيد")
+    st.write("استخدم القائمة الجانبية لبدء مشروعك القادم.")
