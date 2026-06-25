@@ -3,7 +3,7 @@ import streamlit as st
 # إعداد الصفحة لتكون واسعة وتدعم التأثيرات البصرية
 st.set_page_config(page_title="SPIDER-AI", layout="wide")
 
-# محرك الستايلات المتطور (Glassmorphism + Scroll Animations)
+# محرك الستايلات المتطور (تنسيق مطابق للرسومات التخطيطية)
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;700&display=swap');
@@ -14,69 +14,68 @@ st.markdown("""
         color: white;
     }
     
-    /* تصميم الـ Hero Section (المركز) */
-    .hero {
-        text-align: center;
-        padding: 100px 20px;
-        animation: fadeIn 1.5s ease-out;
-    }
-    
-    /* تأثير الانبثاق عند التمرير */
-    .feature-card {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 30px;
-        border-radius: 20px;
-        margin: 20px 0;
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s;
-    }
-    
-    .scroll-reveal {
-        opacity: 1;
-        transform: translateY(20px);
-    }
-    
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    
-    .chat-box {
-        background: rgba(0, 0, 0, 0.4);
-        border: 1px solid #38bdf8;
-        border-radius: 15px;
+    /* تصميم الهيكل التخطيطي */
+    .header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         padding: 20px;
-        width: 80%;
-        margin: 0 auto;
-        box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+        background: rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .main-box {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid #38bdf8;
+        border-radius: 20px;
+        padding: 40px;
+        margin-top: 50px;
+        text-align: center;
+    }
+    
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-top: 40px;
+    }
+    
+    .feature-card {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 20px;
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: 0.3s;
+    }
+    
+    .feature-card:hover {
+        transform: scale(1.02);
+        border-color: #38bdf8;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 1. قسم الواجهة الرئيسية (الهيرو)
+# 1. الشريط العلوي (مطابق للرسم التخطيطي)
 st.markdown("""
-    <div class="hero">
+    <div class="header-bar">
         <h1>SPIDER-AI</h1>
-        <p style="font-size: 1.5rem; color: #94a3b8;">ابدأ ببرومبت واحد.. وغير كل شيء لاحقاً</p>
+        <div>
+            <button style="background:transparent; color:white; border:1px solid white; padding:5px 15px; border-radius:5px; margin-right:10px;">تسجيل دخول</button>
+            <button style="background:#38bdf8; color:white; border:none; padding:5px 15px; border-radius:5px;">إنشاء حساب</button>
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
-# 2. منطقة المحادثة (الأساس البرمجي)
-st.markdown('<div class="chat-box">', unsafe_allow_html=True)
-user_input = st.text_area("صف فكرتك وسنحولها لواقع..", height=150, label_visibility="collapsed")
-if st.button("توليد التطبيق 🚀"):
-    st.success("جاري بناء المحرك الخاص بك...")
+# 2. منطقة الإدخال المركزية (مطابقة لصورة 45603)
+st.markdown('<div class="main-box">', unsafe_allow_html=True)
+st.write("<h2>هنا يتم توليد التطبيق</h2>")
+user_input = st.text_area("أدخل فكرتك هنا...", height=150, label_visibility="collapsed")
+if st.button("توليد 🚀"):
+    st.success("جاري البرمجة...")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 3. قسم الانبثاق (المعلومات والمميزات)
-st.markdown("<br><br><br>", unsafe_allow_html=True)
-st.markdown("### 🕸️ اكتشف قدرات المنصة")
-
-cols = st.columns(3)
-with cols[0]:
-    st.markdown('<div class="feature-card"><h3>محرك ذكي</h3><p>توليد كود لحظي</p></div>', unsafe_allow_html=True)
-with cols[1]:
-    st.markdown('<div class="feature-card"><h3>معاينة حية</h3><p>شاهد تطبيقك فوراً</p></div>', unsafe_allow_html=True)
-with cols[2]:
-    st.markdown('<div class="feature-card"><h3>تعديل مرن</h3><p>تحكم بكل بكسل</p></div>', unsafe_allow_html=True)
-
-# تذييل الصفحة
-st.markdown("<br><br><center>© 2026 SPIDER-AI Engine</center>", unsafe_allow_html=True)
+# 3. المربعات السفلية (مطابقة لصورة 45602)
+st.markdown('<div class="feature-grid">', unsafe_allow_html=True)
+st.markdown('<div class="feature-card"><h3>صور عن الأداة</h3><p>شرح لكيفية عمل المنصة</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="feature-card"><h3>صور عن الأداة</h3><p>المزيد من التفاصيل والنتائج</p></div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
