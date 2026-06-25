@@ -1,62 +1,71 @@
 import streamlit as st
 import re
+import os
+import time
+import base64
 from g4f.client import Client
 import streamlit.components.v1 as components
 
-# إعدادات متقدمة
-st.set_page_config(page_title="SPIDER-AI: Enterprise Edition", layout="wide")
+# --- 1. إعداد النظام العملاق ---
+st.set_page_config(page_title="SPIDER-AI: The Core", layout="wide", page_icon="🕷️")
 
-# CSS العملاق للتصميم الاحترافي
+# --- 2. نظام التنسيق المتقدم (CSS العملاق) ---
 st.markdown("""
     <style>
-    .ide-container { background: #09090b; border: 1px solid #27272a; border-radius: 12px; padding: 20px; color: #e4e4e7; }
-    .nav-tab { padding: 10px 20px; cursor: pointer; border-bottom: 2px solid transparent; }
-    .nav-tab:hover { border-bottom: 2px solid #2ea44f; }
-    .sidebar-content { font-family: 'JetBrains Mono'; font-size: 12px; }
-    .code-block { background: #000; border: 1px solid #333; padding: 15px; border-radius: 8px; overflow-x: auto; }
+    :root { --main-bg: #050505; --panel-bg: #0f0f12; --border: #27272a; --accent: #00ff87; }
+    .stApp { background-color: var(--main-bg); color: #d4d4d8; font-family: 'JetBrains Mono', monospace; }
+    .sidebar .st-emotion-cache-12fmxhu { background-color: var(--panel-bg); }
+    .ide-panel { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .status-bar { border-top: 1px solid var(--border); padding: 5px 15px; font-size: 11px; color: #52525b; }
     </style>
 """, unsafe_allow_html=True)
 
-# إدارة البيانات الكبيرة
-if 'projects' not in st.session_state: st.session_state.projects = []
-if 'active_tab' not in st.session_state: st.session_state.active_tab = "الدردشة"
-
-# الـ Sidebar الاحترافي للمشاريع
-with st.sidebar:
-    st.markdown("### 🕸️ SPIDER-AI Core")
-    st.write("---")
-    if st.button("➕ مشروع جديد"):
-        st.session_state.projects.append({"name": "مشروع تجسيد جديد", "code": ""})
+# --- 3. محرك الوكلاء (Agentic Engine) ---
+class SpiderEngine:
+    def __init__(self):
+        self.client = Client()
     
-    for i, proj in enumerate(st.session_state.projects):
-        if st.button(f"📁 {proj['name']}"):
-            st.session_state.active_project = i
+    def generate_component(self, task, complexity="high"):
+        # هذا هو "القلب" الذي سيولد الكود العملاق
+        system_prompt = f"""
+        You are the SPIDER-AI Core Engine. Generate an massive, highly complex, production-ready, single-file HTML/CSS/JS solution.
+        - Complexity: {complexity}
+        - Features: Must include modular CSS, advanced JS logic (classes/prototypes), error handling, and fully responsive design.
+        - STRICT: No markdown, no truncated code, no placeholders. Full code only.
+        """
+        response = self.client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": task}]
+        )
+        return response.choices[0].message.content
 
-# التبويبات الرئيسية (العمود الفقري للنظام)
-tab1, tab2, tab3 = st.tabs(["💬 المحادثة الذكية", "💻 كود المصدري", "🚀 بيئة المعاينة"])
+# --- 4. واجهة النظام (The System UI) ---
+engine = SpiderEngine()
 
-with tab1:
-    st.markdown("### 🤖 وكيل البرمجيات المتخصص")
-    user_prompt = st.text_area("صف المهمة البرمجية العملاقة:")
-    if st.button("بدء التجسيد البرمجي"):
-        client = Client()
-        response = client.chat.completions.create(model="gpt-4o", messages=[{"role": "user", "content": user_prompt}])
-        st.session_state.last_code = response.choices[0].message.content
-        st.success("تم التجسيد بنجاح!")
-
-with tab2:
-    st.markdown("### 💻 كود المشروع المولد")
-    if 'last_code' in st.session_state:
-        st.code(st.session_state.last_code, language="html")
-
-with tab3:
-    st.markdown("### 🚀 معاينة حية (Live Engine)")
-    if 'last_code' in st.session_state:
-        clean_code = re.sub(r'```html\s*', '', st.session_state.last_code).replace('```', '')
-        components.html(clean_code, height=600, scrolling=True)
-    else:
-        st.warning("لا يوجد كود للمعاينة حالياً.")
-
-# تذييل احترافي
+st.title("🕷️ SPIDER-AI: Enterprise Engine")
 st.markdown("---")
-st.caption("SPIDER-AI Engine v1.0.0 | نظام تجسيد تفاعلي")
+
+# تقسيم الشاشة إلى 3 مناطق عملاقة
+col_left, col_mid, col_right = st.columns([1, 2, 1])
+
+with col_left:
+    st.markdown("### ⚙️ الإعدادات المتقدمة")
+    mode = st.selectbox("وضع التوليد", ["2D Simulation", "3D WebApp", "System Tool", "Game Engine"])
+    complexity = st.select_slider("درجة التعقيد البرمجي", options=["Low", "Medium", "High", "Enterprise"])
+    if st.button("تفعيل المحرك"):
+        st.session_state.run = True
+
+with col_mid:
+    st.markdown("### 🖥️ مركز التجسيد المباشر")
+    if 'run' in st.session_state:
+        with st.spinner("جاري برمجة المنظومة..."):
+            code = engine.generate_component("Create a high-end application for: " + mode)
+            st.session_state.code = code
+            components.html(code, height=600)
+
+with col_right:
+    st.markdown("### 🛡️ سجلات النظام")
+    st.text_area("System Logs", "Engine initialized...", height=400)
+    if st.button("تحميل الملف النهائي (.html)"):
+        b64 = base64.b64encode(st.session_state.code.encode()).decode()
+        st.markdown(f'<a href="data:text/html;base64,{b64}" download="project.html">اضغط هنا للتحميل</a>', unsafe_allow_html=True)
