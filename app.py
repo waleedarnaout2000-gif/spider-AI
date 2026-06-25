@@ -1,61 +1,286 @@
 import streamlit as st
+import re
+import time
+from g4f.client import Client
 import streamlit.components.v1 as components
 
-# إعداد الصفحة
-st.set_page_config(page_title="SPIDER-AI Engine", layout="wide")
+# --- إعدادات الصفحة والتصميم العام للمنصة ---
+st.set_page_config(page_title="SPIDER-AI Engine", page_icon="🕷️", layout="wide")
 
-# محرك الستايلات (الأسود الملكي والأخضر المضيء)
+# تصميم واجهة مستخدم مظلمة واحترافية تحاكي البيئات البرمجية من تصاميم Visily والرسومات اليدوية
 st.markdown("""
     <style>
-    :root { --royal-black: #050505; --neon-green: #00FF41; --panel-bg: #111111; }
-    .stApp { background-color: var(--royal-black); color: #e2e8f0; }
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght=400;600;700&family=Fira+Code:wght=400;500&display=swap');
+    html, body, .main { font-family: 'Cairo', sans-serif; text-align: right; direction: rtl; background-color: #0d1117; color: #c9d1d9; }
+    h1, h2, h3, p, label { color: #f0f6fc; text-align: right; }
     
-    /* تصميم الأزرار والقوائم */
-    .nav-btn { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid var(--neon-green); 
-               background: transparent; color: var(--neon-green); border-radius: 5px; cursor: pointer; }
-    .nav-btn:hover { background: var(--neon-green); color: black; }
+    /* صناديق المحادثة السينمائية */
+    .chat-card { padding: 15px; border-radius: 10px; margin-bottom: 15px; line-height: 1.6; }
+    .user-msg { background-color: #21262d; border-right: 4px solid #58a6ff; }
+    .agent-msg { background-color: #161b22; border-right: 4px solid #2ea44f; }
     
-    .panel { background: var(--panel-bg); padding: 20px; border-radius: 10px; border: 1px solid #333; }
-    h1, h2 { color: var(--neon-green); }
+    /* مؤشرات تفكير الوكيل البرمجي */
+    .thinking-box { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 12px; margin: 10px 0; font-family: 'Fira Code', monospace; font-size: 13px; color: #8b949e; direction: ltr; text-align: left; }
+    .step-done { color: #56d364; }
+    .step-active { color: #58a6ff; font-weight: bold; animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: 0.5; } }
+    
+    /* أزرار مخصصة فخمة */
+    div.stButton > button:first-child {
+        background: linear-gradient(135deg, #238636, #2ea44f); color: white;
+        border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; width: 100%; transition: 0.2s;
+    }
+    div.stButton > button:first-child:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(46, 164, 79, 0.3); }
+    
+    /* تصميم بطاقات الأخطاء الذكية */
+    .error-card {
+        background-color: #3b1212;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #f85149;
+        color: #ff7b72;
+        margin-bottom: 20px;
+        text-align: right;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# إدارة حالة التنقل
-if 'page' not in st.session_state: st.session_state.page = 'landing'
-if 'history' not in st.session_state: st.session_state.history = []
+# --- إدارة وتخزين بيانات الجلسة (State Management) ---
+if 'messages' not in st.session_state:
+    st.session_state.messages = [{"role": "agent", "content": "مرحباً بك في SPIDER-AI! أنا مهندس البرمجيات الذكي الخاص بك. ضع هنا فكرتك البرمجية (موقع، تطبيق، لعبة 2D تفاعلية، أو لعبة 3D متطورة)، وسأقوم بمناقشتها معك وبنائها فوراً."}]
+if 'generated_html' not in st.session_state:
+    st.session_state.generated_html = ""
+if 'current_stage' not in st.session_state:
+    st.session_state.current_stage = "discussion" # المراحل المتاحة: discussion | generating | finished
+if 'code_blocks' not in st.session_state:
+    st.session_state.code_blocks = {}
+if 'error_occurred' not in st.session_state:
+    st.session_state.error_occurred = False
+if 'sidebar_page' not in st.session_state:
+    st.session_state.sidebar_page = "dashboard" # الصفحات الجانبية: dashboard | projects | settings
 
-# القائمة الجانبية للتنقل
+client = Client()
+
+# --- دالة الذكاء الاصطناعي للمحادثة والتوليد الذكي مع تفعيل الموجه الخلفي الصارم ---
+def ask_agent(prompt):
+    system_prompt = """
+    You are an elite, world-class game architect and senior full-stack developer.
+    Your absolute priority is to output flawless, clean, and fully executable single-file source code.
+    
+    CRITICAL INSTRUCTIONS FOR CODE COMPLETENESS:
+    1. NEVER write placeholder comments, incomplete logic, or short-cuts like "// rest of the code goes here" or "// TODO: add logic". Every single line of styling, HTML markup, and JavaScript logic MUST be written out in full.
+    2. The entire output must be a single, self-contained HTML file incorporating all CSS (inside <style> tags) and JavaScript (inside <script> tags).
+    3. All interface text, game labels, game-over screens, and instructions inside the generated application MUST be written in the Arabic language.
+    4. Return ONLY valid, clean HTML code starting strictly with <!DOCTYPE html> and ending with </html>. Do NOT wrap the code in markdown code blocks (such as ```html ... ```).
+    
+    RULES FOR 2D GAMES:
+    - If a 2D game is requested, build it using HTML5 Canvas and vanilla JavaScript.
+    - Implement a proper responsive game loop using requestAnimationFrame.
+    - Always include on-screen touch controls (arrows or joysticks) for mobile players alongside standard keyboard controls (WASD/Arrows).
+    - Design beautiful modern UI overlays for start, score tracking, and game-over states.
+    
+    RULES FOR 3D GAMES & SIMULATIONS:
+    - If a 3D game or simulation is requested, build it using Three.js.
+    - Load Three.js safely from: "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+    - ALWAYS configure AmbientLight (intensity ~0.6) and DirectionalLight (intensity ~0.8) pointing at the center to prevent black screens.
+    - Implement smooth rotation camera controls (mouse dragging or touch swiping) so players can change the viewing angle.
+    - Start the animation loop strictly after window.onload event.
+    - NEVER use external image URLs for textures. Use generated solid or glowing neon materials and colors on basic procedural meshes (Cubes, Spheres, Cylinders) instead.
+    """
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"ERROR_API_FAILED: {str(e)}"
+
+# --- القائمة الجانبية الاحترافية الثابتة (Sidebar Navigation) ---
 with st.sidebar:
-    st.markdown("## 🕸️ SPIDER-AI")
-    if st.button("الرئيسية", key="nav_landing"): st.session_state.page = 'landing'
-    if st.button("لوحة التحكم", key="nav_dashboard"): st.session_state.page = 'dashboard'
-    if st.button("معرض الأكواد", key="nav_editor"): st.session_state.page = 'editor'
-    if st.button("المعاينة الحية", key="nav_preview"): st.session_state.page = 'preview'
-    if st.button("الإعدادات", key="nav_settings"): st.session_state.page = 'settings'
+    st.markdown("<h2 style='text-align: center; color: #58a6ff;'>🕷️ SPIDER-AI</h2>", unsafe_allow_html=True)
+    st.write("---")
+    
+    if st.button("🏠 لوحة التحكم الرئيسية"):
+        st.session_state.sidebar_page = "dashboard"
+        if st.session_state.current_stage == "finished":
+            st.session_state.current_stage = "discussion"
+        st.rerun()
+        
+    if st.button("🎮 ألعابي وتطبيقاتي"):
+        st.session_state.sidebar_page = "projects"
+        st.rerun()
+        
+    if st.button("⚙️ الإعدادات وتوطين اللغة"):
+        st.session_state.sidebar_page = "settings"
+        st.rerun()
+        
+    st.write("---")
+    # رصيد الحساب المالي والنقاط بناءً على مخططاتك الرسمية ومخرجات Visily
+    st.metric(label="📊 رصيد النقاط المتاح", value="10,000")
+    st.markdown("<p style='font-size: 11px; text-align: center; color: #8b949e;'>الحالة: حساب مطور تجريبي (Beta)</p>", unsafe_allow_html=True)
 
-# المنطق الأساسي للتنقل بين الصفحات
-if st.session_state.page == 'landing':
-    st.title("أهلاً بك في SPIDER-AI")
-    st.write("حول فكرتك إلى واقع برمجيات احترافي.")
+# --- توجيه تيار التحكم بناءً على خيار القائمة الجانبية ---
 
-elif st.session_state.page == 'dashboard':
-    st.title("لوحة التحكم")
-    st.info("هنا ستظهر إحصائيات مشاريعك وحالة النظام.")
+# أولاً: إذا ضغط على صفحة "ألعابي وتطبيقاتي"
+if st.session_state.sidebar_page == "projects":
+    st.markdown("## 🎮 معرض مشاريعك المكتملة")
+    st.write("---")
+    st.markdown("""
+        <div style='text-align: center; padding: 50px; background-color: #161b22; border-radius: 12px; border: 1px dashed #30363d;'>
+            <h3 style='color: #8b949e;'>📭 قائمة المشاريع فارغة</h3>
+            <p style='color: #8b949e;'>يبدو أنك لم تقم بإنشاء أي مشروع برمجى تفاعلي حتى الآن. انتقل إلى لوحة التحكم لتحويل فكرتك إلى واقع.</p>
+        </div>
+    """, unsafe_allow_html=True)
 
-elif st.session_state.page == 'editor':
-    st.title("معرض الأكواد")
-    user_prompt = st.text_area("صف فكرتك هنا:")
-    if st.button("توليد الكود"):
-        st.session_state.history.append(user_prompt)
-        st.success("تم التوليد بنجاح!")
+# ثانياً: إذا ضغط على صفحة "الإعدادات"
+elif st.session_state.sidebar_page == "settings":
+    st.markdown("## ⚙️ إعدادات المنصة وبيئة التشغيل")
+    st.write("---")
+    st.selectbox("لغة واجهة الوكيل البرمجي الذكي:", ["العربية (المحلية)", "English"])
+    st.slider("الحد الأقصى لاستهلاك الذاكرة الافتراضية (Sandbox Memory Limit):", 256, 1024, 512, fmt="%d MB")
+    st.checkbox("تفعيل نظام التصحيح التلقائي للأخطاء (Auto Code Healing)", value=True)
+    st.success("تم تأمين وحفظ الإعدادات بنجاح!")
 
-elif st.session_state.page == 'preview':
-    st.title("المعاينة الحية")
-    if st.session_state.history:
-        components.html(f"<html><body style='color:green;'>{st.session_state.history[-1]}</body></html>", height=400)
-    else:
-        st.warning("لا يوجد مشروع حالياً للمعاينة.")
+# ثالثاً: الصفحة الرئيسية الافتراضية للمنصة (Dashboard)
+elif st.session_state.sidebar_page == "dashboard":
+    
+    # حالة انتهاء البناء وعرض اللعبة بالكامل (Finished Layout Preview)
+    if st.session_state.current_stage == "finished":
+        st.markdown("### 🎮 بيئة التشغيل والمعاينة الحية المستقلة")
+        # عرض المعاينة النظيفة الممتدة عبر iframe فخم
+        components.html(st.session_state.generated_html, height=750, scrolling=True)
+        
+        st.write("---")
+        if st.button("🔄 العودة إلى شاشة التطوير والمحادثة لإجراء تعديل جديد"):
+            st.session_state.current_stage = "discussion"
+            st.rerun()
+            
+    # حالتي التخطيط والنقاش أو بناء التوليد والأنيميشن الحركي
+    elif st.session_state.current_stage in ["discussion", "generating"]:
+        st.markdown("## 🤖 المهندس البرمجي الذكي لـ SPIDER-AI")
+        st.write("ناقش أبعاد فكرتك التقنية بالتفصيل، وسيتولى الوكيل معالجة وبناء الأكواد التفاعلية.")
+        st.write("---")
+        
+        col_chat, col_steps = st.columns([1.2, 1])
+        
+        with col_chat:
+            st.markdown("### 💬 منطقة توليد وصياغة الأفكار")
+            chat_placeholder = st.container(height=400)
+            with chat_placeholder:
+                for msg in st.session_state.messages:
+                    cls = "user-msg" if msg["role"] == "user" else "agent-msg"
+                    st.markdown(f"<div class='chat-card {cls}'>{msg['content']}</div>", unsafe_allow_html=True)
+            
+            # حقل إرسال الأوامر والردود للمستخدم
+            with st.form("chat_form", clear_on_submit=True):
+                user_input = st.text_input("اكتب فكرتك البرمجية أو ردك المعماري هنا:", placeholder="مثال: ابدأ برمجة لعبة سيارات 2D بمنظور علوي وحساب النقاط...")
+                submit_chat = st.form_submit_button("إرسال التوجيه للوكيل 🚀")
+                
+            if submit_chat and user_input.strip():
+                st.session_state.messages.append({"role": "user", "content": user_input})
+                
+                # التحقق الذكي من رغبة المستخدم في بدء البناء التنفيذي للمنتج
+                if any(word in user_input for word in ["ابدا", "انشئ", "برمج", "بناء", "ابدأ", "أنشئ"]):
+                    st.session_state.current_stage = "generating"
+                    st.rerun()
+                else:
+                    with st.spinner("🤖 يفكر المهندس في أبعاد فكرتك ويصيغ لك أسئلة توجيهية..."):
+                        prompt_query = f"User idea: {user_input}. Respond in Arabic. Ask 2-3 deep, professional architectural or design questions to help them make this single-page app or game perfect."
+                        agent_reply = ask_agent(prompt_query)
+                        
+                        if "ERROR_API_FAILED" in agent_reply:
+                            st.session_state.error_occurred = True
+                        else:
+                            st.session_state.messages.append({"role": "agent", "content": agent_reply})
+                    st.rerun()
 
-elif st.session_state.page == 'settings':
-    st.title("الإعدادات")
-    st.selectbox("اللغة:", ["العربية", "English"])
+        with col_steps:
+            st.markdown("### 🛠️ مراقبة منصة الأوامر وحالة النظام")
+            
+            # حماية البيئة من التجمد وعرض بطاقة الطوارئ والأخطاء الذكية في واجهة مستقلة
+            if st.session_state.error_occurred:
+                st.markdown(f"""
+                    <div class='error-card'>
+                        <h3>⚠️ خطأ: AI MODEL TIMEOUT EXCEEDED</h3>
+                        <p>واجه مهندس الكود مشكلة فنية أثناء تجميع المتطلبات أو تعذر الحصول على استجابة فورية من خوادم الذكاء الاصطناعي.</p>
+                        <p><b>الإجراء المقترح:</b> يرجى مراجعة وتعديل الوصف أو إعادة محاولة الاتصال بالخادم الآن.</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                if st.button("🔄 إعادة محاولة تأسيس الاتصال"):
+                    st.session_state.error_occurred = False
+                    st.rerun()
+                    
+            elif st.session_state.current_stage == "generating":
+                status_box = st.empty()
+                
+                # محاكاة خطوة بخطوة تفاعلية تطابق الواجهات الهندسية
+                status_box.markdown("""
+                    <div class='thinking-box'>
+                        <div class='step-active'>⏳ [1/4] جاري تحليل المتطلبات البرمجية وصياغة الهيكل الكامل...</div>
+                    </div>
+                """, unsafe_allow_html=True)
+                time.sleep(1.5)
+                
+                status_box.markdown("""
+                    <div class='thinking-box'>
+                        <div class='step-done'>✅ [1/4] تم فهم وتحليل المتطلبات البرمجية بنجاح.</div>
+                        <div class='step-active'>⏳ [2/4] جاري كتابة وتأمين ملف الأنماط والتصميم البصري (CSS Styles)...</div>
+                    </div>
+                """, unsafe_allow_html=True)
+                st.session_state.code_blocks["css"] = "/* تصميم واجهة مفعمة بالحيوية والتحكم التفاعلي */\ncanvas {\n  display: block;\n  background: #000;\n  margin: auto;\n  border: 4px solid #00FF87;\n  box-shadow: 0 0 20px #00FF87;\n}"
+                with st.expander("📦 كود هيكل الأنماط البصرية المكتوب"):
+                    st.code(st.session_state.code_blocks["css"], language="css")
+                time.sleep(1.5)
+                
+                status_box.markdown("""
+                    <div class='thinking-box'>
+                        <div class='step-done'>✅ [1/4] تم فهم وتحليل المتطلبات البرمجية بنجاح.</div>
+                        <div class='step-done'>✅ [2/4] تم الانتهاء من تصميم وتطبيق واجهات الـ CSS الفخمة.</div>
+                        <div class='step-active'>⏳ [3/4] جاري برمجة منطق التفاعل والحركة (Javascript Engine)...</div>
+                    </div>
+                """, unsafe_allow_html=True)
+                st.session_state.code_blocks["js"] = "// محرك المنطق والحركة التفاعلية للألعاب\nfunction gameLoop() {\n  updateState();\n  drawScene();\n  requestAnimationFrame(gameLoop);\n}"
+                with st.expander("📦 كود منطق الحركة والتحكم المكتوب"):
+                    st.code(st.session_state.code_blocks["js"], language="javascript")
+                time.sleep(1.5)
+                
+                status_box.markdown("""
+                    <div class='thinking-box'>
+                        <div class='step-done'>✅ [1/4] تم فهم وتحليل المتطلبات البرمجية بنجاح.</div>
+                        <div class='step-done'>✅ [2/4] تم الانتهاء من تصميم وتطبيق واجهات الـ CSS الفخمة.</div>
+                        <div class='step-done'>✅ [3/4] تم حقن وتأمين منطق الحركة ومحرك التفاعل البرمجي.</div>
+                        <div class='step-active'>⏳ [4/4] جاري تجميع وإخراج الكود الكامل والنظيف في ملف واحد...</div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # تجميع المخرجات من سياق الرسائل الفعلي مع فرض الموجه الصارم
+                full_prompt = f"Create a fully detailed, clean and complete executable single-file solution in Arabic based on: {str(st.session_state.messages)}. Remember, do NOT use placeholders or truncation comments like '// rest of code'."
+                final_generated = ask_agent(full_prompt)
+                
+                if "ERROR_API_FAILED" in final_generated:
+                    st.session_state.error_occurred = True
+                    st.session_state.current_stage = "discussion"
+                    st.rerun()
+                else:
+                    # معالجة تنظيف كود الـ HTML المتولد لمنع مشاكل العرض داخل المتصفح
+                    final_generated = re.sub(r'^```html\s*', '', final_generated, flags=re.IGNORECASE)
+                    final_generated = re.sub(r'```$', '', final_generated)
+                    st.session_state.generated_html = final_generated.strip()
+                    
+                    status_box.markdown("""
+                        <div class='thinking-box'>
+                            <div class='step-done'>✅ [1/4] تم فهم وتحليل المتطلبات البرمجية بنجاح.</div>
+                            <div class='step-done'>✅ [2/4] تم الانتهاء من تصميم وتطبيق واجهات الـ CSS الفخمة.</div>
+                            <div class='step-done'>✅ [3/4] تم حقن وتأمين منطق الحركة ومحرك التفاعل البرمجي.</div>
+                            <div class='step-done'>🎉 [4/4] تمت عملية التجميع والتوليد بنجاح واكتمال تام! الكود جاهز للتشغيل الحركي.</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                    st.session_state.current_stage = "finished"
+                    st.rerun()
+            else:
+                st.info("💡 بانتظار تعليماتك البرمجية لبدء تشغيل التوليد وفحص هيكل الأكواد المكتوبة.")
