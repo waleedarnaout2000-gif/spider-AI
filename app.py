@@ -1,89 +1,62 @@
 import streamlit as st
 import re
-import time
 from g4f.client import Client
 import streamlit.components.v1 as components
 
-# --- إعدادات الصفحة ---
-st.set_page_config(page_title="SPIDER-AI | Next Gen", layout="wide", page_icon="🕷️")
+# إعدادات متقدمة
+st.set_page_config(page_title="SPIDER-AI: Enterprise Edition", layout="wide")
 
-# --- التصميم الاحترافي (CSS) ---
+# CSS العملاق للتصميم الاحترافي
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap');
-    
-    :root { --bg-dark: #09090b; --panel: #18181b; --accent: #2ea44f; --text: #f4f4f5; }
-    
-    .stApp { background-color: var(--bg-dark); color: var(--text); font-family: 'Inter', sans-serif; }
-    
-    /* الـ Sidebar الاحترافي */
-    [data-testid="stSidebar"] { background-color: var(--panel); border-right: 1px solid #27272a; padding: 1rem; }
-    
-    /* بطاقات المحادثة الأنيقة */
-    .chat-bubble { background: #27272a; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; border-left: 4px solid var(--accent); font-size: 14px; }
-    
-    /* منطقة التفكير */
-    .thinking-box { background: #000; border: 1px solid #333; padding: 1rem; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a1a1aa; }
-    
-    /* الأزرار */
-    div.stButton > button { background: var(--accent); color: white; border: none; border-radius: 6px; width: 100%; height: 45px; font-weight: 600; transition: 0.3s; }
-    div.stButton > button:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(46, 164, 79, 0.3); }
-    
-    /* تنظيف الواجهة */
-    #MainMenu {visibility: hidden;} footer {visibility: hidden;}
+    .ide-container { background: #09090b; border: 1px solid #27272a; border-radius: 12px; padding: 20px; color: #e4e4e7; }
+    .nav-tab { padding: 10px 20px; cursor: pointer; border-bottom: 2px solid transparent; }
+    .nav-tab:hover { border-bottom: 2px solid #2ea44f; }
+    .sidebar-content { font-family: 'JetBrains Mono'; font-size: 12px; }
+    .code-block { background: #000; border: 1px solid #333; padding: 15px; border-radius: 8px; overflow-x: auto; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- إدارة الجلسة ---
-if 'messages' not in st.session_state: st.session_state.messages = []
-if 'current_stage' not in st.session_state: st.session_state.current_stage = "discussion"
-if 'generated_html' not in st.session_state: st.session_state.generated_html = ""
+# إدارة البيانات الكبيرة
+if 'projects' not in st.session_state: st.session_state.projects = []
+if 'active_tab' not in st.session_state: st.session_state.active_tab = "الدردشة"
 
-client = Client()
-
-# --- دالة الذكاء الاصطناعي (كما هي، مع تحسين البرومبت) ---
-def ask_agent(prompt):
-    system_prompt = "You are a senior elite developer. Output ONLY clean, full HTML/CSS/JS in one file. No markdown, no placeholders. Arabic UI."
-    try:
-        response = client.chat.completions.create(model="gpt-4o", messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}])
-        return response.choices[0].message.content.strip()
-    except: return "ERROR"
-
-# --- الواجهة ---
+# الـ Sidebar الاحترافي للمشاريع
 with st.sidebar:
-    st.markdown("## 🕷️ SPIDER-AI")
-    st.markdown("---")
-    chat_placeholder = st.container(height=450)
-    for msg in st.session_state.messages:
-        chat_placeholder.markdown(f"<div class='chat-bubble'>{msg['content']}</div>", unsafe_allow_html=True)
-
-    with st.form("input_form", clear_on_submit=True):
-        user_input = st.text_input("أدخل فكرتك:", placeholder="مثال: لعبة نيون أونلاين...")
-        if st.form_submit_button("بدء التجسيد"):
-            st.session_state.messages.append({"role": "user", "content": user_input})
-            st.session_state.current_stage = "generating"
-            st.rerun()
-
-# --- منطقة العرض الرئيسية ---
-if st.session_state.current_stage == "generating":
-    st.markdown("### 🛠️ المحرك البرمجي يعمل...")
-    status = st.empty()
-    status.markdown("<div class='thinking-box'>جاري تحليل البنية الأساسية...</div>", unsafe_allow_html=True)
-    time.sleep(1)
-    status.markdown("<div class='thinking-box'>توليد الواجهة التفاعلية...</div>", unsafe_allow_html=True)
+    st.markdown("### 🕸️ SPIDER-AI Core")
+    st.write("---")
+    if st.button("➕ مشروع جديد"):
+        st.session_state.projects.append({"name": "مشروع تجسيد جديد", "code": ""})
     
-    code = ask_agent(f"Generate full project for: {st.session_state.messages[-1]['content']}")
-    st.session_state.generated_html = re.sub(r'^```html\s*', '', code).replace('```', '')
-    st.session_state.current_stage = "finished"
-    st.rerun()
+    for i, proj in enumerate(st.session_state.projects):
+        if st.button(f"📁 {proj['name']}"):
+            st.session_state.active_project = i
 
-elif st.session_state.current_stage == "finished":
-    st.markdown("### 🖥️ النتيجة النهائية (Live Preview)")
-    components.html(st.session_state.generated_html, height=700, scrolling=True)
-    if st.button("تطوير فكرة جديدة"):
-        st.session_state.current_stage = "discussion"
-        st.rerun()
+# التبويبات الرئيسية (العمود الفقري للنظام)
+tab1, tab2, tab3 = st.tabs(["💬 المحادثة الذكية", "💻 كود المصدري", "🚀 بيئة المعاينة"])
 
-else:
-    st.title("مرحباً بك في عالم التجسيد")
-    st.write("استخدم القائمة الجانبية لبدء مشروعك القادم.")
+with tab1:
+    st.markdown("### 🤖 وكيل البرمجيات المتخصص")
+    user_prompt = st.text_area("صف المهمة البرمجية العملاقة:")
+    if st.button("بدء التجسيد البرمجي"):
+        client = Client()
+        response = client.chat.completions.create(model="gpt-4o", messages=[{"role": "user", "content": user_prompt}])
+        st.session_state.last_code = response.choices[0].message.content
+        st.success("تم التجسيد بنجاح!")
+
+with tab2:
+    st.markdown("### 💻 كود المشروع المولد")
+    if 'last_code' in st.session_state:
+        st.code(st.session_state.last_code, language="html")
+
+with tab3:
+    st.markdown("### 🚀 معاينة حية (Live Engine)")
+    if 'last_code' in st.session_state:
+        clean_code = re.sub(r'```html\s*', '', st.session_state.last_code).replace('```', '')
+        components.html(clean_code, height=600, scrolling=True)
+    else:
+        st.warning("لا يوجد كود للمعاينة حالياً.")
+
+# تذييل احترافي
+st.markdown("---")
+st.caption("SPIDER-AI Engine v1.0.0 | نظام تجسيد تفاعلي")
