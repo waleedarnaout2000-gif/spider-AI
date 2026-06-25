@@ -1,81 +1,61 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
-# إعداد الصفحة لتكون واسعة وتدعم التأثيرات البصرية
-st.set_page_config(page_title="SPIDER-AI", layout="wide")
+# إعداد الصفحة
+st.set_page_config(page_title="SPIDER-AI Engine", layout="wide")
 
-# محرك الستايلات المتطور (تنسيق مطابق للرسومات التخطيطية)
+# محرك الستايلات (الأسود الملكي والأخضر المضيء)
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;700&display=swap');
+    :root { --royal-black: #050505; --neon-green: #00FF41; --panel-bg: #111111; }
+    .stApp { background-color: var(--royal-black); color: #e2e8f0; }
     
-    .stApp {
-        background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
-        font-family: 'Tajawal', sans-serif;
-        color: white;
-    }
+    /* تصميم الأزرار والقوائم */
+    .nav-btn { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid var(--neon-green); 
+               background: transparent; color: var(--neon-green); border-radius: 5px; cursor: pointer; }
+    .nav-btn:hover { background: var(--neon-green); color: black; }
     
-    /* تصميم الهيكل التخطيطي */
-    .header-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px;
-        background: rgba(255, 255, 255, 0.05);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .main-box {
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid #38bdf8;
-        border-radius: 20px;
-        padding: 40px;
-        margin-top: 50px;
-        text-align: center;
-    }
-    
-    .feature-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-        margin-top: 40px;
-    }
-    
-    .feature-card {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 20px;
-        border-radius: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: 0.3s;
-    }
-    
-    .feature-card:hover {
-        transform: scale(1.02);
-        border-color: #38bdf8;
-    }
+    .panel { background: var(--panel-bg); padding: 20px; border-radius: 10px; border: 1px solid #333; }
+    h1, h2 { color: var(--neon-green); }
     </style>
 """, unsafe_allow_html=True)
 
-# 1. الشريط العلوي (مطابق للرسم التخطيطي)
-st.markdown("""
-    <div class="header-bar">
-        <h1>SPIDER-AI</h1>
-        <div>
-            <button style="background:transparent; color:white; border:1px solid white; padding:5px 15px; border-radius:5px; margin-right:10px;">تسجيل دخول</button>
-            <button style="background:#38bdf8; color:white; border:none; padding:5px 15px; border-radius:5px;">إنشاء حساب</button>
-        </div>
-    </div>
-""", unsafe_allow_html=True)
+# إدارة حالة التنقل
+if 'page' not in st.session_state: st.session_state.page = 'landing'
+if 'history' not in st.session_state: st.session_state.history = []
 
-# 2. منطقة الإدخال المركزية (مطابقة لصورة 45603)
-st.markdown('<div class="main-box">', unsafe_allow_html=True)
-st.write("<h2>هنا يتم توليد التطبيق</h2>")
-user_input = st.text_area("أدخل فكرتك هنا...", height=150, label_visibility="collapsed")
-if st.button("توليد 🚀"):
-    st.success("جاري البرمجة...")
-st.markdown('</div>', unsafe_allow_html=True)
+# القائمة الجانبية للتنقل
+with st.sidebar:
+    st.markdown("## 🕸️ SPIDER-AI")
+    if st.button("الرئيسية", key="nav_landing"): st.session_state.page = 'landing'
+    if st.button("لوحة التحكم", key="nav_dashboard"): st.session_state.page = 'dashboard'
+    if st.button("معرض الأكواد", key="nav_editor"): st.session_state.page = 'editor'
+    if st.button("المعاينة الحية", key="nav_preview"): st.session_state.page = 'preview'
+    if st.button("الإعدادات", key="nav_settings"): st.session_state.page = 'settings'
 
-# 3. المربعات السفلية (مطابقة لصورة 45602)
-st.markdown('<div class="feature-grid">', unsafe_allow_html=True)
-st.markdown('<div class="feature-card"><h3>صور عن الأداة</h3><p>شرح لكيفية عمل المنصة</p></div>', unsafe_allow_html=True)
-st.markdown('<div class="feature-card"><h3>صور عن الأداة</h3><p>المزيد من التفاصيل والنتائج</p></div>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
+# المنطق الأساسي للتنقل بين الصفحات
+if st.session_state.page == 'landing':
+    st.title("أهلاً بك في SPIDER-AI")
+    st.write("حول فكرتك إلى واقع برمجيات احترافي.")
+
+elif st.session_state.page == 'dashboard':
+    st.title("لوحة التحكم")
+    st.info("هنا ستظهر إحصائيات مشاريعك وحالة النظام.")
+
+elif st.session_state.page == 'editor':
+    st.title("معرض الأكواد")
+    user_prompt = st.text_area("صف فكرتك هنا:")
+    if st.button("توليد الكود"):
+        st.session_state.history.append(user_prompt)
+        st.success("تم التوليد بنجاح!")
+
+elif st.session_state.page == 'preview':
+    st.title("المعاينة الحية")
+    if st.session_state.history:
+        components.html(f"<html><body style='color:green;'>{st.session_state.history[-1]}</body></html>", height=400)
+    else:
+        st.warning("لا يوجد مشروع حالياً للمعاينة.")
+
+elif st.session_state.page == 'settings':
+    st.title("الإعدادات")
+    st.selectbox("اللغة:", ["العربية", "English"])
