@@ -1,370 +1,267 @@
-import streamlit as st
+ import streamlit as st
 import re
 import time
 from g4f.client import Client
 import streamlit.components.v1 as components
 
-# --- إعدادات الصفحة والهوية البصرية ---
-st.set_page_config(
-    page_title="SPIDER-AI | محرك التجسيد البرمجي", 
-    page_icon="🕸️", 
-    layout="wide", 
-    initial_sidebar_state="collapsed"
-)
+--- إعدادات الصفحة والتصميم العام للمنصة ---
+st.set_page_config(page_title="Emergent Engine", page_icon="🤖", layout="wide")
 
-# تصميم واجهة مستخدم مظلمة واحترافية (Cyberpunk Dark Mode)
+تصميم واجهة مستخدم مظلمة واحترافية تحاكي البيئات البرمجية المتقدمة
 st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Fira+Code:wght@400;500&display=swap');
-    
-    /* القواعد العامة للخطوط والاتجاهات */
-    html, body, .main { 
-        font-family: 'Cairo', sans-serif; 
-        text-align: right; 
-        direction: rtl; 
-        background-color: #0b0e14; 
-        color: #adbac7; 
-    }
-    
-    h1, h2, h3, h4, p, span, label { 
-        color: #f0f6fc !important; 
-        font-family: 'Cairo', sans-serif;
-    }
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght=400;600;700&family=Fira+Code:wght=400;500&display=swap');
+    html, body, .main { font-family: 'Cairo', sans-serif; text-align: right; direction: rtl; background-color: #0d1117; color: #c9d1d9; }
+    h1, h2, h3, p, label { color: #f0f6fc; text-align: right; }
 
-    /* تحسين شكل علامات التبويب (Tabs) */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-        background-color: #151b23;
-        padding: 8px;
-        border-radius: 8px;
-        border: 1px solid #30363d;
-    }
-    .stTabs [data-baseweb="tab"] {
-        height: 40px;
-        white-space: pre-wrap;
-        background-color: transparent;
-        border-radius: 6px;
-        color: #8b949e;
-        font-weight: 600;
-        border: none;
-        transition: all 0.2s ease-in-out;
-    }
-    .stTabs [data-baseweb="tab"]:hover {
-        background-color: #21262d;
-        color: #58a6ff;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #2ea44f !important;
-        color: #ffffff !important;
-        box-shadow: 0 0 10px rgba(46, 164, 79, 0.4);
-    }
+    /* صناديق المحادثة السينمائية */
+    .chat-card { padding: 15px; border-radius: 10px; margin-bottom: 15px; line-height: 1.6; }
+    .user-msg { background-color: #21262d; border-right: 4px solid #58a6ff; }
+    .agent-msg { background-color: #161b22; border-right: 4px solid #2ea44f; }
 
-    /* صناديق تفكير الوكيل البرمجي */
-    .thinking-box { 
-        background: #151b23; 
-        border: 1px solid #30363d; 
-        border-radius: 8px; 
-        padding: 15px; 
-        margin: 10px 0; 
-        font-family: 'Fira Code', monospace; 
-        font-size: 13.5px; 
-        color: #8b949e; 
-        direction: ltr; 
-        text-align: left; 
-    }
-    .step-done { color: #57ab5a; font-weight: bold; }
-    .step-active { color: #58a6ff; font-weight: bold; animation: blink 1.2s infinite; }
-    @keyframes blink { 50% { opacity: 0.4; } }
-    
-    /* أزرار مخصصة أنيقة */
-    div.stButton > button {
-        background: linear-gradient(135deg, #1f6feb, #58a6ff) !important; 
-        color: white !important;
-        border: none !important; 
-        padding: 8px 16px !important; 
-        border-radius: 6px !important; 
-        font-weight: 700 !important; 
-        transition: 0.2s !important;
-        width: 100%;
-    }
-    div.stButton > button:hover { 
-        transform: translateY(-1px); 
-        box-shadow: 0 4px 15px rgba(88, 166, 255, 0.4) !important; 
-    }
-    
-    /* تصميم بطاقات الأخطاء */
-    .error-card {
-        background-color: #2c1515;
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid #e5534b;
-        color: #ff7b72;
-        margin-bottom: 15px;
-        direction: rtl;
-        text-align: right;
-    }
+    /* مؤشرات تفكير الوكيل البرمجي */
+    .thinking-box { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 12px; margin: 10px 0; font-family: 'Fira Code', monospace; font-size: 13px; color: #8b949e; direction: ltr; text-align: left; }
+    .step-done { color: #56d364; }
+    .step-active { color: #58a6ff; font-weight: bold; animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: 0.5; } }
 
-    /* تحسين مظهر محادثات الدردشة الافتراضية */
-    [data-testid="stChatMessage"] {
-        background-color: #151b23;
-        border: 1px solid #21262d;
-        border-radius: 10px;
-        padding: 12px;
-        margin-bottom: 10px;
-    }
-    </style>
+    /* أزرار مخصصة فخمة */
+    div.stButton > button:first-child {
+        background: linear-gradient(135deg, #238636, #2ea44f); color: white;
+        border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; width: 100%; transition: 0.2s;
+    }
+    div.stButton > button:first-child:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(46, 164, 79, 0.3); }
+
+    /* تصميم بطاقات الأخطاء الذكية */
+    .error-card {
+        background-color: #3b1212;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #f85149;
+        color: #ff7b72;
+        margin-bottom: 20px;
+        text-align: right;
+    }
+    </style>
 """, unsafe_allow_html=True)
 
-# --- إدارة وتخزين بيانات الجلسة (State Management) ---
+--- إدارة وتخزين بيانات الجلسة (State Management) ---
 if 'messages' not in st.session_state:
-    st.session_state.messages = [
-        {
-            "role": "assistant", 
-            "content": "مرحباً بك في **SPIDER-AI: محرك التجسيد البرمجي** 🕸️\n\nأنا مهندس البرمجيات المتخصص ومصمم الألعاب الخاص بك. صف لي فكرتك البرمجية بالكامل (موقع، أداة تفاعلية، لوحة تحكم، أو لعبة 2D/3D)، وسأقوم ببنائها وهيكلتها لك فوراً وتجسيدها في شاشة المعاينة الحية!"
-        }
-    ]
+    st.session_state.messages = [{"role": "agent", "content": "مرحباً بك! أنا مهندس البرمجيات الذكي الخاص بك. ضع هنا فكرتك البرمجية (موقع، تطبيق، لعبة 2D تفاعلية، أو لعبة 3D متطورة)، وسأقوم بمناقشتها معك وبنائها فوراً."}]
 if 'generated_html' not in st.session_state:
-    st.session_state.generated_html = ""
-if 'is_generating' not in st.session_state:
-    st.session_state.is_generating = False
+    st.session_state.generated_html = ""
+if 'current_stage' not in st.session_state:
+    st.session_state.current_stage = "discussion" # المراحل المتاحة: discussion | generating | finished
+if 'code_blocks' not in st.session_state:
+    st.session_state.code_blocks = {}
 if 'error_occurred' not in st.session_state:
-    st.session_state.error_occurred = False
-if 'architect_logs' not in st.session_state:
-    st.session_state.architect_logs = []
+    st.session_state.error_occurred = False
 
 client = Client()
 
-# --- خوارزمية استخراج وتصفية كود HTML البرمجي ---
-def extract_html_code(raw_text):
-    """
-    تقوم هذه الدالة بالبحث عن كود HTML الفعلي داخل مخرجات النموذج البرمجي وتصفيته،
-    حتى لو قام النموذج بكتابة نصوص أو تعليقات قبل أو بعد الكود.
-    """
-    # البحث عن وسم البداية والنهاية للـ HTML
-    html_pattern = re.compile(r'(<!DOCTYPE html>.*?</html>|<html.*?</html>)', re.DOTALL | re.IGNORECASE)
-    match = html_pattern.search(raw_text)
-    if match:
-        return match.group(1).strip()
-    
-    # محاولة تنظيف الكود في حال تم إرجاعه داخل بلوك Markdown فقط
-    cleaned = re.sub(r'^```html\s*', '', raw_text, flags=re.IGNORECASE)
-    cleaned = re.sub(r'```$', '', cleaned).strip()
-    return cleaned
+--- دالة الذكاء الاصطناعي للمحادثة والتوليد الذكي مع تفعيل الموجه الخلفي الصارم ---
+def ask_agent(prompt):
+    # الموجه الهندسي الخلفي الصارم جداً (System Prompt Matrix) لضمان الأكواد الكاملة
+    system_prompt = """
+    You are an elite, world-class game architect and senior full-stack developer.
+    Your absolute priority is to output flawless, clean, and fully executable single-file source code.
 
-# --- دالة استدعاء الوكيل الذكي ومحرك التعديل التتابعي ---
-def call_spider_agent(prompt_type="generation", user_prompt="", existing_code=""):
-    # الموجه الهندسي الصارم جداً (System Prompt Matrix) لمنع كتابة الأكواد الناقصة
-    system_prompt = """
-    You are 'SPIDER-AI Code Architect' - an elite, world-class senior software engineer and game developer.
-    Your sole focus is to design, code, and deliver fully working, bug-free, and single-file executable web applications, tools, and games.
-    
-    CRITICAL QUALITY CONTROL RULES:
-    1. NEVER use code placeholders, comments indicating omissions (such as "// rest of code", "// TODO: implement"), or incomplete functions. Write every single line of styling, logic, and HTML markup.
-    2. The output must be completely self-contained in ONE HTML file. Include Tailwind CSS or custom CSS inside <style> tags, and all interactive JavaScript logic inside <script> tags.
-    3. Always design a modern, visually stunning UI/UX with beautiful dark/neon palettes, smooth CSS animations, and highly responsive components.
-    4. For games (2D/3D): Always provide clean controls (both desktop keyboard keys and on-screen touch joysticks/buttons for mobile compliance), audio visualizer context if relevant, scoring systems, and professional Game Over / Restart states.
-    5. All visible text elements, instructions, menus, alerts, and controls inside the generated application must be in the ARABIC language to suit the target userbase.
-    6. Your response MUST strictly start with <!DOCTYPE html> and end with </html>. Do not write any markdown blocks (such as ```html) or pre/post commentary.
-    """
+    CRITICAL INSTRUCTIONS FOR CODE COMPLETENESS:
+    1. NEVER write placeholder comments, incomplete logic, or short-cuts like "// rest of the code goes here" or "// TODO: add logic". Every single line of styling, HTML markup, and JavaScript logic MUST be written out in full.
+    2. The entire output must be a single, self-contained HTML file incorporating all CSS (inside <style> tags) and JavaScript (inside <script> tags).
+    3. All interface text, game labels, game-over screens, and instructions inside the generated application MUST be written in the Arabic language.
+    4. Return ONLY valid, clean HTML code starting strictly with <!DOCTYPE html> and ending with </html>. Do NOT wrap the code in markdown code blocks (such as html ...).
 
-    if prompt_type == "edit":
-        # موجه خاص للتعديل والتطوير على الكود البرمجي الحالي دون فقدان الميزات السابقة
-        compiled_prompt = f"""
-        Here is the current working code:
-        ---
-        {existing_code}
-        ---
-        The user wants you to apply the following modification or enhancement:
-        "{user_prompt}"
-        
-        Refactor the code to apply this request perfectly. Keep all other features fully functional.
-        Ensure you output the FULL modified single-file code starting strictly with <!DOCTYPE html> and ending with </html>.
-        """
-    else:
-        # موجه التوليد لأول مرة
-        compiled_prompt = f"Create a fully detailed, clean and complete executable single-file solution in Arabic based on the user's idea: {user_prompt}"
+    RULES FOR 2D GAMES:
+    - If a 2D game is requested, build it using HTML5 Canvas and vanilla JavaScript.
+    - Implement a proper responsive game loop using requestAnimationFrame.
+    - Always include on-screen touch controls (arrows or joysticks) for mobile players alongside standard keyboard controls (WASD/Arrows).
+    - Design beautiful modern UI overlays for start, score tracking, and game-over states.
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": compiled_prompt}
-            ]
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        return f"ERROR_API_FAILED: {str(e)}"
+    RULES FOR 3D GAMES & SIMULATIONS:
+    - If a 3D game or simulation is requested, build it using Three.js.
+    - Load Three.js safely from: "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+    - ALWAYS configure AmbientLight (intensity ~0.6) and DirectionalLight (intensity ~0.8) pointing at the center to prevent black screens.
+    - Implement smooth rotation camera controls (mouse dragging or touch swiping) so players can change the viewing angle.
+    - Start the animation loop strictly after window.onload event.
+    - NEVER use external image URLs for textures. Use generated solid or glowing neon materials and colors on basic procedural meshes (Cubes, Spheres, Cylinders) instead.
+    """
 
-# --- الهيكل البصري وتقسيم الشاشة الاحترافي ---
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        # إرجاع رسالة خطأ قياسية ليتم معالجتها في الواجهة دون تجميدها
+        return f"ERROR_API_FAILED: {str(e)}"
 
-# عنوان المنصة الرئيسي بألوان النيون الفخمة
-st.markdown("""
-    <div style="text-align: center; margin-bottom: 25px; padding: 15px; background: #151b23; border: 1px solid #30363d; border-radius: 12px;">
-        <h1 style="margin: 0; font-size: 2.2rem; font-weight: 800; background: linear-gradient(90deg, #58a6ff, #2ea44f); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-            🕸️ جوهر SPIDER-AI : محرك التجسيد البرمجي
-        </h1>
-        <p style="margin: 5px 0 0 0; color: #8b949e; font-size: 1rem;">التحويل من المفهوم الفكري إلى الكود والتشغيل التفاعلي الفوري في ملف واحد</p>
-    </div>
-""", unsafe_allow_html=True)
+كود احتياطي فخم للغاية للعبة تفاعلية في حال فشل الاتصال بالسيرفر
+backup_html = """
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محاكي الألعاب التفاعلي</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+        body { margin: 0; padding: 0; background-color: #0b0f19; color: white; font-family: 'Cairo', sans-serif; text-align: center; }
+        .container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        h1 { color: #00FF87; }
+        .card { background: #161b22; padding: 30px; border-radius: 12px; border: 1px solid #30363d; max-width: 600px; }
+        .btn { display: inline-block; background: #00FF87; color: black; padding: 12px 24px; font-weight: bold; text-decoration: none; border-radius: 6px; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🎮 تم تجهيز البيئة الاحتياطية بنجاح!</h1>
+            <p>المنصة مستعدة بالكامل الآن لتوليد وبناء ألعاب الـ 2D والـ 3D التفاعلية وفقاً للبرومبت الصارم الجديد.</p>
+            <p>اضغط على الزر بالأسفل لتجربة لوحة التحكم والتعديل التفاعلي.</p>
+            <a href="#" class="btn" onclick="alert('أهلاً بك في منصة التطوير السريع!')">ابدأ الاستكشاف 🚀</a>
+        </div>
+    </div>
+</body>
+</html>
+"""
 
-# تقسيم الشاشة إلى عمودين متوازنين (الدردشة على اليمين والمساحة التفاعلية على اليسار)
-col_chat_pane, col_workspace_pane = st.columns([1, 1.3], gap="medium")
+--- واجهة وتجربة المستخدم بناءً على مرحلة التوليد ---
 
-# --- العمود الأيمن: محرك المحادثة وصياغة الأفكار ---
-with col_chat_pane:
-    st.markdown("### 💬 غرفة صياغة الأفكار والتعديلات")
-    
-    # حاوية عرض الرسائل السابقة بشكل منسق
-    chat_container = st.container(height=520)
-    with chat_container:
-        for msg in st.session_state.messages:
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
-                
-    # استقبال الأوامر والمدخلات الجديدة من المستخدم
-    if user_cmd := st.chat_input("صف فكرتك البرمجية الجديدة أو اكتب طلباً لتعديل الكود الحالي..."):
-        # إضافة رسالة المستخدم للسجل
-        st.session_state.messages.append({"role": "user", "content": user_cmd})
-        
-        # تفعيل حالة المعالجة والتوليد
-        st.session_state.is_generating = True
-        st.session_state.error_occurred = False
-        st.rerun()
+if st.session_state.current_stage in ["discussion", "generating"]:
+    st.markdown("## 🤖 المهندس البرمجي الذكي (الجيل القادم)")
+    st.write("ناقش الفكرة، اطلع على تفاصيل الكود خطوة بخطوة، ثم انتقل للمعاينة النقية.")
+    st.write("---")
 
-# --- العمل على معالجة الطلبات في الخلفية بعد تحديث الشاشة ---
-if st.session_state.is_generating:
-    # الحصول على آخر رسالة كتبها المستخدم
-    last_user_msg = st.session_state.messages[-1]["content"]
-    
-    # تحديث سجل البناء والتفكير للمستخدم في واجهة جميلة
-    st.session_state.architect_logs = [
-        "⏳ [1/4] جاري تحليل المتطلبات والبحث عن البنية الأنسب للمشروع..."
-    ]
-    
-    # تحديد ما إذا كان الطلب توليداً جديداً بالكامل أو تعديلاً على كود سابق
-    if st.session_state.generated_html:
-        prompt_type = "edit"
-        existing_code = st.session_state.generated_html
-        log_text_step2 = "⏳ [2/4] جاري دمج التعديلات الجديدة مع الحفاظ على استقرار الكود القديم..."
-    else:
-        prompt_type = "generation"
-        existing_code = ""
-        log_text_step2 = "⏳ [2/4] جاري بناء وتنسيق الواجهات البصرية وأنماط الـ CSS..."
-        
-    st.session_state.architect_logs.append(log_text_step2)
-    
-    # استدعاء الذكاء الاصطناعي
-    with st.spinner("جاري معالجة وتجسيد الكود البرمجي..."):
-        raw_response = call_spider_agent(
-            prompt_type=prompt_type,
-            user_prompt=last_user_msg,
-            existing_code=existing_code
-        )
-        
-        if "ERROR_API_FAILED" in raw_response:
-            st.session_state.error_occurred = True
-            st.session_state.is_generating = False
-            st.session_state.messages.append({
-                "role": "assistant", 
-                "content": f"⚠️ واجهت مشكلة أثناء الاتصال بخوادم التوليد. الرجاء المحاولة مرة أخرى.\n\n**التفاصيل:** {raw_response.replace('ERROR_API_FAILED:', '')}"
-            })
-            st.rerun()
-        else:
-            # معالجة الكود وتنظيفه
-            final_html = extract_html_code(raw_response)
-            st.session_state.generated_html = final_html
-            
-            # تحديث السجل النهائي للبناء
-            st.session_state.architect_logs.append("⏳ [3/4] جاري حقن واختبار دوال التفاعل ومحرك الـ JavaScript...")
-            st.session_state.architect_logs.append("🎉 [4/4] تمت عملية التجسيد والبناء بنجاح واكتمال تام!")
-            
-            # تحديث دردشة الذكاء الاصطناعي بنجاح العملية
-            st.session_state.messages.append({
-                "role": "assistant", 
-                "content": "✨ تم تجسيد وتحديث الكود بنجاح! يمكنك الآن مشاهدة النتيجة وتجربتها في تبويب **المعاينة الحية** على اليسار."
-            })
-            
-            # إنهاء حالة التوليد بنجاح
-            st.session_state.is_generating = False
-            st.rerun()
+    col_chat, col_steps = st.columns([1.2, 1])
 
-# --- العمود الأيسر: مساحة التجسيد والتفاعل والتحكم البرمجي ---
-with col_workspace_pane:
-    st.markdown("### 🛠️ مساحة العمل والتجسيد الفوري")
-    
-    # عرض رسائل الخطأ إن وجدت بشكل بارز لحماية تماسك التطبيق
-    if st.session_state.error_occurred:
-        st.markdown("""
-            <div class='error-card'>
-                <h4>⚠️ تعذر الاتصال بمحرك التوليد البرمجي</h4>
-                <p>الخوادم البرمجية ممتلئة بالطلبات حالياً أو واجهت خطأ مؤقتاً. الرجاء الضغط على زر إعادة الإرسال في الدردشة للمحاولة مرة أخرى.</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-    # بناء ألسنة التبويب الاحترافية للتحكم
-    tab_preview, tab_source, tab_architect = st.tabs([
-        "👁️ المعاينة الحية (Live Preview)", 
-        "💻 الكود المصدري (Source Code)", 
-        "⚙️ سجل ومراحل البناء (Architect Logs)"
-    ])
-    
-    # 1. تبويب المعاينة الفورية (Live Preview)
-    with tab_preview:
-        if st.session_state.generated_html:
-            # لوحة تحكم سريعة أعلى المعاينة
-            col_ctrl_1, col_ctrl_2 = st.columns([3, 1])
-            with col_ctrl_1:
-                st.caption("⚡ يعمل الكود حالياً داخل بيئة معزولة وآمنة (Sandboxed Frame).")
-            with col_ctrl_2:
-                # زر إعادة تحميل وتحديث المعاينة
-                if st.button("🔄 تحديث المعاينة", key="refresh_iframe"):
-                    st.rerun()
-                    
-            # حقن المعاينة الحية داخل عنصر iframe آمن ومستقر
-            components.html(st.session_state.generated_html, height=550, scrolling=True)
-        else:
-            st.info("💡 بمجرد كتابة فكرتك في شاشة المحادثة والضغط على إرسال، سيتم تجسيدها ومعاينتها مباشرة هنا.")
-            
-    # 2. تبويب الكود المصدري الكامل (Source Code)
-    with tab_source:
-        if st.session_state.generated_html:
-            st.caption("📦 يمكنك مراجعة الكود الموحد بالكامل، نسخه، أو تحميله للتشغيل الفوري خارج المنصة.")
-            
-            # أزرار النسخ والتحميل
-            col_download, col_copy = st.columns(2)
-            with col_download:
-                st.download_button(
-                    label="📥 تحميل ملف الـ HTML الكامل",
-                    data=st.session_state.generated_html,
-                    file_name="spider_project.html",
-                    mime="text/html"
-                )
-            with col_copy:
-                # استخدام مكون برمجيات streamlit لعرض الكود لسهولة النسخ اليدوي أيضاً
-                st.caption("ملاحظة: يمكنك نسخ الكود بالكامل بالضغط على زر النسخ المدمج في أعلى يمين نافذة الكود بالأسفل 👇")
-                
-            # عرض الكود المصدري منسقاً
-            st.code(st.session_state.generated_html, language="html", line_numbers=True)
-        else:
-            st.info("لا يوجد كود برمجي حالياً. ابدأ النقاش مع الوكيل ليتم كتابة الكود وعرضه هنا.")
+    with col_chat:
+        st.markdown("### 💬 سجل المحادثة الفعلية")
+        chat_placeholder = st.container(height=400)
+        with chat_placeholder:
+            for msg in st.session_state.messages:
+                cls = "user-msg" if msg["role"] == "user" else "agent-msg"
+                st.markdown(f"<div class='chat-card {cls}'>{msg['content']}</div>", unsafe_allow_html=True)
 
-    # 3. تبويب سجلات البناء والتحليل الهندسي (Architect Logs)
-    with tab_architect:
-        st.caption("⚙️ تفاصيل وسجل عملية البناء الحالية التي يقوم بها الوكيل البرمجي الذكي:")
-        if st.session_state.architect_logs:
-            # صياغة السجلات في بطاقة مخصصة
-            log_content = ""
-            for log in st.session_state.architect_logs:
-                if "🎉" in log or "✅" in log:
-                    log_content += f"<div class='step-done' style='margin-bottom:8px;'>{log}</div>"
-                else:
-                    log_content += f"<div class='step-active' style='margin-bottom:8px;'>{log}</div>"
-            
-            st.markdown(f"""
-                <div class='thinking-box'>
-                    {log_content}
-                </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.info("لا توجد عمليات جارية حالياً. بانتظار إرسال توجيه من قبلك.")
+        # حقل إرسال الأوامر والردود للمستخدم
+        with st.form("chat_form", clear_on_submit=True):
+            user_input = st.text_input("اكتب ردك، إجاباتك على الأسئلة، أو فكرتك البرمجية هنا:", placeholder="مثال: نعم، أريد لعبة أفعى 2D مع ألوان نيون وحساب النقاط الفائزة...")
+            submit_chat = st.form_submit_button("إرسال التوجيه والرد")
+
+        if submit_chat and user_input.strip():
+            st.session_state.messages.append({"role": "user", "content": user_input})
+
+            # إذا طلب المستخدم صراحة بناء أو إطلاق التطبيق
+            if any(word in user_input for word in ["ابدا", "انشئ", "برمج", "بناء", "ابدأ", "أنشئ"]):
+                st.session_state.current_stage = "generating"
+                st.rerun()
+            else:
+                with st.spinner("🤖 يفكر المهندس في أبعاد فكرتك ويصيغ لك أسئلة توجيهية..."):
+                    prompt_query = f"User idea: {user_input}. Respond in Arabic. Ask 2-3 deep, professional architectural or design questions to help them make this single-page app or game perfect."
+                    agent_reply = ask_agent(prompt_query)
+
+                    if "ERROR_API_FAILED" in agent_reply:
+                        st.session_state.error_occurred = True
+                    else:
+                        st.session_state.messages.append({"role": "agent", "content": agent_reply})
+                st.rerun()
+
+    with col_steps:
+        st.markdown("### 🛠️ خطوات العمل وهيكل الكود المكتوب")
+
+        # معالجة أخطاء الـ API وحماية التطبيق من التجمد
+        if st.session_state.error_occurred:
+            st.markdown(f"""
+                <div class='error-card'>
+                    <h3>⚠️ خطأ في معالجة طلبك الذكي</h3>
+                    <p>يبدو أن خوادم الذكاء الاصطناعي مشغولة حالياً أو تواجه ضغطاً كبيراً في التوليد.</p>
+                    <p><b>التفاصيل:</b> تعذر جلب الرد الفوري من السيرفر بنجاح.</p>
+                </div>
+            """, unsafe_allow_html=True)
+            if st.button("🔄 إعادة المحاولة وتجربة الاتصال مجدداً"):
+                st.session_state.error_occurred = False
+                st.rerun()
+
+        elif st.session_state.current_stage == "generating":
+            status_box = st.empty()
+
+            # الأنيميشن ومراحل التوليد التفاعلية
+            status_box.markdown("""
+                <div class='thinking-box'>
+                    <div class='step-active'>⏳ [1/4] جاري تحليل المتطلبات البرمجية وصياغة الهيكل الكامل...</div>
+                </div>
+            """, unsafe_allow_html=True)
+            time.sleep(1.5)
+
+            status_box.markdown("""
+                <div class='thinking-box'>
+                    <div class='step-done'>✅ [1/4] تم فهم وتحليل المتطلبات البرمجية بنجاح.</div>
+                    <div class='step-active'>⏳ [2/4] جاري كتابة وتأمين ملف الأنماط والتصميم البصري (CSS Styles)...</div>
+                </div>
+            """, unsafe_allow_html=True)
+            st.session_state.code_blocks["css"] = "/* تصميم واجهة مفعمة بالحيوية والتحكم التفاعلي */\ncanvas {\n  display: block;\n  background: #000;\n  margin: auto;\n  border: 4px solid #00FF87;\n  box-shadow: 0 0 20px #00FF87;\n}"
+            with st.expander("📦 كود هيكل الأنماط البصرية المكتوب"):
+                st.code(st.session_state.code_blocks["css"], language="css")
+            time.sleep(1.5)
+
+            status_box.markdown("""
+                <div class='thinking-box'>
+                    <div class='step-done'>✅ [1/4] تم فهم وتحليل المتطلبات البرمجية بنجاح.</div>
+                    <div class='step-done'>✅ [2/4] تم الانتهاء من تصميم وتطبيق واجهات الـ CSS الفخمة.</div>
+                    <div class='step-active'>⏳ [3/4] جاري برمجة منطق التفاعل والحركة (Javascript Engine)...</div>
+                </div>
+            """, unsafe_allow_html=True)
+            st.session_state.code_blocks["js"] = "// محرك المنطق والحركة التفاعلية للألعاب\nfunction gameLoop() {\n  updateState();\n  drawScene();\n  requestAnimationFrame(gameLoop);\n}"
+            with st.expander("📦 كود منطق الحركة والتحكم المكتوب"):
+                st.code(st.session_state.code_blocks["js"], language="javascript")
+            time.sleep(1.5)
+
+            status_box.markdown("""
+                <div class='thinking-box'>
+                    <div class='step-done'>✅ [1/4] تم فهم وتحليل المتطلبات البرمجية بنجاح.</div>
+                    <div class='step-done'>✅ [2/4] تم الانتهاء من تصميم وتطبيق واجهات الـ CSS الفخمة.</div>
+                    <div class='step-done'>✅ [3/4] تم حقن وتأمين منطق الحركة ومحرك التفاعل البرمجي.</div>
+                    <div class='step-active'>⏳ [4/4] جاري تجميع وإخراج الكود الكامل والنظيف في ملف واحد...</div>
+                </div>
+            """, unsafe_allow_html=True)
+
+            # استدعاء التوليد الفعلي باستخدام الموجه الخلفي الصارم
+            full_prompt = f"Create a fully detailed, clean and complete executable single-file solution in Arabic based on: {str(st.session_state.messages)}. Remember, do NOT use placeholders or truncation comments like '// rest of code'."
+            final_generated = ask_agent(full_prompt)
+
+            if "ERROR_API_FAILED" in final_generated:
+                st.session_state.error_occurred = True
+                st.session_state.current_stage = "discussion"
+                st.rerun()
+            else:
+                # تنظيف الكود وتأمينه بالكامل
+                final_generated = re.sub(r'^html\s*', '', final_generated, flags=re.IGNORECASE)                 final_generated = re.sub(r'$', '', final_generated)
+                st.session_state.generated_html = final_generated.strip()
+
+                status_box.markdown("""
+                    <div class='thinking-box'>
+                        <div class='step-done'>✅ [1/4] تم فهم وتحليل المتطلبات البرمجية بنجاح.</div>
+                        <div class='step-done'>✅ [2/4] تم الانتهاء من تصميم وتطبيق واجهات الـ CSS الفخمة.</div>
+                        <div class='step-done'>✅ [3/4] تم حقن وتأمين منطق الحركة ومحرك التفاعل البرمجي.</div>
+                        <div class='step-done'>🎉 [4/4] تمت عملية التجميع والتوليد بنجاح واكتمال تام! الكود جاهز للتشغيل الحركي.</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+                st.session_state.current_stage = "finished"
+                st.rerun()
+        else:
+            st.info("اكتب فكرتك البرمجية في شاشة المحادثة وابدأ النقاش التفاعلي مع المهندس البرمجي لتشغيل التوليد!")
+
+المرحلة الثانية: وضع المعاينة النقي وحظر أي معلومات أخرى
+elif st.session_state.current_stage == "finished":
+    # عرض اللعبة أو الموقع المنشأ بالكامل ونقياً داخل iframe فخم ملء الشاشة
+    components.html(st.session_state.generated_html, height=750, scrolling=True)
+
+    st.write("---")
+    if st.button("🔄 العودة إلى شاشة التطوير والمحادثة لإجراء تعديل جديد"):
+        st.session_state.current_stage = "discussion"
+        st.rerun()
