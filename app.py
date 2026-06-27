@@ -1,390 +1,758 @@
-# -*- coding: utf-8 -*-
 import streamlit as st
 import re
 import time
 from g4f.client import Client
 import streamlit.components.v1 as components
 
-# --- إعدادات الصفحة والهوية البصرية المتجاوبة مع الحاسوب والهاتف ---
+# ═══════════════════════════════════════════════════════════════
+# إعدادات الصفحة
+# ═══════════════════════════════════════════════════════════════
 st.set_page_config(
-    page_title="SPIDER-AI | محرك التجسيد البرمجي", 
-    page_icon="🕸️", 
-    layout="wide", 
+    page_title="SPIDER-AI",
+    page_icon="🕸️",
+    layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# تصميم واجهة مستخدم مظلمة واحترافية متجاوبة كلياً مع الهواتف والحواسب
+# ═══════════════════════════════════════════════════════════════
+# الهوية البصرية الجديدة — VOID TERMINAL AESTHETIC
+# لوحة ألوان: أسود عميق + ذهبي نيون + أبيض ثلجي
+# ═══════════════════════════════════════════════════════════════
 st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Fira+Code:wght@400;500&display=swap');
-    
-    /* القواعد العامة للخطوط والاتجاهات */
-    html, body, .main { 
-        font-family: 'Cairo', sans-serif; 
-        text-align: right; 
-        direction: rtl; 
-        background-color: #0b0e14; 
-        color: #adbac7; 
-    }
-    
-    h1, h2, h3, h4, p, span, label { 
-        color: #f0f6fc !important; 
-        font-family: 'Cairo', sans-serif;
-    }
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
-    /* تحسين شكل علامات التبويب (Tabs) */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-        background-color: #151b23;
-        padding: 8px;
-        border-radius: 8px;
-        border: 1px solid #30363d;
-    }
-    .stTabs [data-baseweb="tab"] {
-        height: 40px;
-        white-space: pre-wrap;
-        background-color: transparent;
-        border-radius: 6px;
-        color: #8b949e;
-        font-weight: 600;
-        border: none;
-        transition: all 0.2s ease-in-out;
-    }
-    .stTabs [data-baseweb="tab"]:hover {
-        background-color: #21262d;
-        color: #58a6ff;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #2ea44f !important;
-        color: #ffffff !important;
-        box-shadow: 0 0 10px rgba(46, 164, 79, 0.4);
-    }
+/* ──────────── Reset & Base ──────────── */
+*, *::before, *::after { box-sizing: border-box; }
 
-    /* صناديق تفكير الوكيل البرمجي */
-    .thinking-box { 
-        background: #151b23; 
-        border: 1px solid #30363d; 
-        border-radius: 8px; 
-        padding: 15px; 
-        margin: 10px 0; 
-        font-family: 'Fira Code', monospace; 
-        font-size: 13.5px; 
-        color: #8b949e; 
-        direction: ltr; 
-        text-align: left; 
-    }
-    .step-done { color: #57ab5a; font-weight: bold; }
-    .step-active { color: #58a6ff; font-weight: bold; animation: blink 1.2s infinite; }
-    @keyframes blink { 50% { opacity: 0.4; } }
-    
-    /* أزرار مخصصة أنيقة */
-    div.stButton > button {
-        background: linear-gradient(135deg, #1f6feb, #58a6ff) !important; 
-        color: white !important;
-        border: none !important; 
-        padding: 10px 18px !important; 
-        border-radius: 8px !important; 
-        font-weight: 700 !important; 
-        transition: 0.2s !important;
-        width: 100%;
-        font-size: 14px !important;
-    }
-    div.stButton > button:hover { 
-        transform: translateY(-1px); 
-        box-shadow: 0 4px 15px rgba(88, 166, 255, 0.4) !important; 
-    }
-    
-    /* تصميم بطاقات الأخطاء */
-    .error-card {
-        background-color: #2c1515;
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid #e5534b;
-        color: #ff7b72;
-        margin-bottom: 15px;
-        direction: rtl;
-        text-align: right;
-    }
+html, body, [data-testid="stAppViewContainer"], .main {
+    background-color: #080808 !important;
+    font-family: 'Space Grotesk', sans-serif;
+    direction: rtl;
+    text-align: right;
+    color: #e8e8e8;
+}
 
-    /* تحسين مظهر محادثات الدردشة الافتراضية */
-    [data-testid="stChatMessage"] {
-        background-color: #151b23;
-        border: 1px solid #21262d;
-        border-radius: 10px;
-        padding: 12px;
-        margin-bottom: 10px;
-    }
+/* Hide Streamlit chrome */
+#MainMenu, footer, header, [data-testid="stToolbar"],
+[data-testid="stDecoration"], [data-testid="stStatusWidget"] { display: none !important; }
 
-    /* 📱 تحسينات مخصصة لتجاوب الهواتف المحمولة */
-    @media (max-width: 768px) {
-        .main .block-container {
-            padding: 10px !important;
-        }
-        h1 {
-            font-size: 1.4rem !important;
-        }
-        p {
-            font-size: 0.85rem !important;
-        }
-        /* ضبط ارتفاعات شاشات العرض على الموبايل لتوفير مساحة */
-        iframe {
-            height: 400px !important;
-        }
-        .stTabs [data-baseweb="tab"] {
-            font-size: 11px !important;
-            padding: 0 8px !important;
-        }
-    }
-    </style>
+[data-testid="stAppViewContainer"] > section:first-child { padding-top: 0 !important; }
+.block-container { padding: 0 !important; max-width: 100% !important; }
+
+/* ──────────── HERO HEADER ──────────── */
+.hero-header {
+    background: #080808;
+    border-bottom: 1px solid #1a1a1a;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo-mark {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e8c84a;
+    letter-spacing: 0.15em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo-mark .web-icon {
+    width: 28px;
+    height: 28px;
+    border: 2px solid #e8c84a;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+}
+
+.header-tagline {
+    font-size: 0.72rem;
+    color: #555;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.status-pill {
+    background: #0f1a0f;
+    border: 1px solid #1e3a1e;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.68rem;
+    color: #4caf50;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-dot {
+    width: 6px; height: 6px;
+    background: #4caf50;
+    border-radius: 50%;
+    animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(76,175,80,0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(76,175,80,0); }
+}
+
+/* ──────────── TWO-COLUMN LAYOUT ──────────── */
+.app-shell {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    height: calc(100vh - 65px);
+    overflow: hidden;
+}
+
+/* ──────────── LEFT PANEL — CHAT ──────────── */
+.chat-panel {
+    background: #0c0c0c;
+    border-left: 1px solid #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.panel-label {
+    padding: 14px 20px 10px;
+    font-size: 0.65rem;
+    color: #444;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border-bottom: 1px solid #111;
+    flex-shrink: 0;
+}
+
+/* ──────────── WORKSPACE ──────────── */
+.workspace-panel {
+    background: #080808;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ──────────── STREAMLIT OVERRIDES ──────────── */
+
+/* Columns */
+[data-testid="column"] { padding: 0 !important; }
+
+/* Chat messages */
+[data-testid="stChatMessage"] {
+    background: transparent !important;
+    border: none !important;
+    padding: 8px 0 !important;
+    margin: 0 !important;
+}
+
+[data-testid="stChatMessage"][data-testid*="user"] .stMarkdown {
+    background: #141414;
+    border: 1px solid #222;
+    border-radius: 12px 12px 4px 12px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    color: #e8e8e8;
+    max-width: 90%;
+    margin-right: auto;
+}
+
+[data-testid="stChatMessage"][data-testid*="assistant"] .stMarkdown {
+    background: #0f150f;
+    border: 1px solid #1a2a1a;
+    border-radius: 12px 12px 12px 4px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    color: #b8e8b8;
+    max-width: 93%;
+}
+
+/* Chat avatar */
+[data-testid="stChatMessage"] [data-testid="chatAvatarIcon-user"] {
+    background: #1a1a1a !important;
+    color: #e8c84a !important;
+    border: 1px solid #2a2a2a !important;
+    border-radius: 8px !important;
+}
+
+[data-testid="stChatMessage"] [data-testid="chatAvatarIcon-assistant"] {
+    background: #0f150f !important;
+    color: #4caf50 !important;
+    border: 1px solid #1a2a1a !important;
+    border-radius: 8px !important;
+}
+
+/* Chat input */
+[data-testid="stChatInput"] {
+    background: #0c0c0c !important;
+    border-top: 1px solid #1a1a1a !important;
+    padding: 12px 16px !important;
+}
+
+[data-testid="stChatInput"] textarea {
+    background: #111 !important;
+    border: 1px solid #222 !important;
+    border-radius: 8px !important;
+    color: #e8e8e8 !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-size: 0.88rem !important;
+    padding: 10px 14px !important;
+    resize: none !important;
+    caret-color: #e8c84a !important;
+}
+
+[data-testid="stChatInput"] textarea:focus {
+    border-color: #333 !important;
+    box-shadow: 0 0 0 2px rgba(232, 200, 74, 0.1) !important;
+    outline: none !important;
+}
+
+[data-testid="stChatInput"] button {
+    background: #e8c84a !important;
+    border: none !important;
+    border-radius: 6px !important;
+    color: #080808 !important;
+}
+
+/* Tabs */
+[data-baseweb="tab-list"] {
+    background: transparent !important;
+    border-bottom: 1px solid #1a1a1a !important;
+    gap: 0 !important;
+    padding: 0 20px !important;
+}
+
+[data-baseweb="tab"] {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    border-radius: 0 !important;
+    color: #444 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.72rem !important;
+    font-weight: 500 !important;
+    padding: 12px 16px !important;
+    margin: 0 !important;
+    letter-spacing: 0.06em !important;
+    transition: color 0.15s !important;
+}
+
+[data-baseweb="tab"]:hover { color: #888 !important; }
+
+[aria-selected="true"] {
+    color: #e8c84a !important;
+    border-bottom-color: #e8c84a !important;
+    background: transparent !important;
+    font-weight: 700 !important;
+}
+
+[data-testid="stTabsContent"] { padding: 0 !important; }
+
+/* Buttons */
+div.stButton > button {
+    background: #111 !important;
+    border: 1px solid #222 !important;
+    color: #888 !important;
+    border-radius: 6px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.72rem !important;
+    font-weight: 500 !important;
+    padding: 6px 14px !important;
+    letter-spacing: 0.05em !important;
+    transition: all 0.15s !important;
+    width: auto !important;
+}
+
+div.stButton > button:hover {
+    border-color: #e8c84a !important;
+    color: #e8c84a !important;
+    background: #0f0e06 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Download button */
+[data-testid="stDownloadButton"] > button {
+    background: #080e08 !important;
+    border: 1px solid #1a3a1a !important;
+    color: #4caf50 !important;
+    border-radius: 6px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.72rem !important;
+    width: 100% !important;
+    padding: 8px 14px !important;
+}
+
+/* Code block */
+[data-testid="stCode"] {
+    background: #0a0a0a !important;
+    border: 1px solid #1a1a1a !important;
+    border-radius: 8px !important;
+}
+
+pre { background: #0a0a0a !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #080808; }
+::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #333; }
+
+/* Info / alerts */
+[data-testid="stInfo"] {
+    background: #0d0d0d !important;
+    border: 1px solid #1a1a1a !important;
+    border-radius: 8px !important;
+    color: #555 !important;
+    font-size: 0.85rem !important;
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Caption */
+[data-testid="stCaption"] {
+    color: #383838 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.68rem !important;
+}
+
+/* Spinner */
+[data-testid="stSpinner"] { color: #e8c84a !important; }
+
+/* Container scrollable */
+[data-testid="stVerticalBlockBorderWrapper"] { border: none !important; background: transparent !important; }
+
+/* ──────────── CUSTOM COMPONENTS ──────────── */
+
+/* Thinking terminal */
+.terminal-log {
+    background: #0a0a0a;
+    border: 1px solid #1a1a1a;
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: #555;
+    margin: 16px;
+}
+
+.terminal-log .log-header {
+    color: #2a2a2a;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #111;
+}
+
+.log-line { margin: 6px 0; display: flex; align-items: center; gap: 10px; }
+.log-done { color: #4caf50; }
+.log-active {
+    color: #e8c84a;
+    animation: flicker 1.5s ease-in-out infinite;
+}
+.log-wait { color: #2a2a2a; }
+
+@keyframes flicker {
+    0%, 100% { opacity: 1; }
+    45% { opacity: 0.3; }
+    55% { opacity: 0.3; }
+}
+
+.log-prefix { color: #2a2a2a; user-select: none; }
+.log-active .log-prefix { color: #555; }
+.log-done .log-prefix { color: #2a5f2a; }
+
+/* Error card */
+.error-terminal {
+    background: #0d0505;
+    border: 1px solid #3a1515;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: #8b3a3a;
+    direction: rtl;
+    text-align: right;
+}
+
+.error-terminal .err-header { color: #c0392b; margin-bottom: 6px; font-weight: 700; }
+
+/* Empty state */
+.empty-workspace {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    padding: 40px;
+    text-align: center;
+}
+
+.empty-grid {
+    width: 120px;
+    height: 120px;
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.empty-grid::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(#111 1px, transparent 1px),
+        linear-gradient(90deg, #111 1px, transparent 1px);
+    background-size: 20px 20px;
+    border-radius: 8px;
+}
+
+.empty-grid .center-dot {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px; height: 12px;
+    background: #e8c84a;
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(232, 200, 74, 0.4);
+}
+
+.empty-title {
+    font-size: 0.9rem;
+    color: #333;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.08em;
+}
+
+.empty-sub {
+    font-size: 0.75rem;
+    color: #222;
+    max-width: 260px;
+    line-height: 1.6;
+}
+
+/* iframe wrapper */
+.preview-shell {
+    padding: 0;
+    height: calc(100vh - 130px);
+    overflow: hidden;
+}
+
+/* Panel sections */
+.section-padding { padding: 16px 20px; }
+.workspace-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid #111;
+}
+
+/* Heading overrides */
+h1, h2, h3, h4, h5, h6 {
+    color: #e8e8e8 !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    margin: 0 !important;
+}
+
+p, span, label, div { color: inherit; }
+
+/* Remove stMarkdown top margin */
+.stMarkdown { margin: 0 !important; }
+
+/* Columns gap fix */
+[data-testid="stHorizontalBlock"] { gap: 0 !important; }
+
+</style>
 """, unsafe_allow_html=True)
 
-# --- إدارة وتخزين بيانات الجلسة (State Management) ---
-if 'messages' not in st.session_state:
-    st.session_state.messages = [
+# ═══════════════════════════════════════════════════════════════
+# State Management
+# ═══════════════════════════════════════════════════════════════
+defaults = {
+    'messages': [
         {
-            "role": "assistant", 
-            "content": "مرحباً بك في **SPIDER-AI: محرك التجسيد البرمجي** 🕸️\n\nأنا مهندس برمجيات ومصمم ألعاب ذكي. صف لي فكرتك البرمجية بالكامل، وسأقوم بطرح بعض الأسئلة الهندسية البسيطة عليك لتنقيح التصميم والخصائص، وعندما نصبح جاهزين، سنقوم ببنائها فوراً وتجسيدها في المعاينة الحية!"
+            "role": "assistant",
+            "content": "مرحباً — أنا **SPIDER-AI**.\n\nصِف فكرتك البرمجية: موقع، أداة، لوحة تحكم، أو لعبة. سأبنيها في ملف HTML واحد قابل للتشغيل الفوري."
         }
-    ]
-if 'generated_html' not in st.session_state:
-    st.session_state.generated_html = ""
-if 'is_generating' not in st.session_state:
-    st.session_state.is_generating = False
-if 'error_occurred' not in st.session_state:
-    st.session_state.error_occurred = False
-if 'architect_logs' not in st.session_state:
-    st.session_state.architect_logs = []
+    ],
+    'generated_html': "",
+    'is_generating': False,
+    'error_occurred': False,
+    'architect_logs': [],
+    'generation_count': 0,
+}
+
+for key, val in defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = val
 
 client = Client()
 
-# --- خوارزمية استخراج وتصفية كود HTML البرمجي ---
-def extract_html_code(raw_text):
-    html_pattern = re.compile(r'(<!DOCTYPE html>.*?</html>|<html.*?</html>)', re.DOTALL | re.IGNORECASE)
-    match = html_pattern.search(raw_text)
+# ═══════════════════════════════════════════════════════════════
+# Core Functions
+# ═══════════════════════════════════════════════════════════════
+def extract_html_code(raw_text: str) -> str:
+    pattern = re.compile(
+        r'(<!DOCTYPE html>.*?</html>|<html.*?</html>)',
+        re.DOTALL | re.IGNORECASE
+    )
+    match = pattern.search(raw_text)
     if match:
         return match.group(1).strip()
-    
     cleaned = re.sub(r'^```html\s*', '', raw_text, flags=re.IGNORECASE)
     cleaned = re.sub(r'```$', '', cleaned).strip()
     return cleaned
 
-# --- دالة استدعاء الوكيل الذكي (مناقشة تفاعلية وتوليد الكود) ---
-def call_spider_agent(prompt_type="discussion", user_prompt="", chat_history=[]):
-    
-    # 1. موجه وضع المناقشة وطرح الأسئلة الذكية (Discussion System Prompt)
-    discussion_system = """
-    You are 'SPIDER-AI Business Analyst & Architect'. Your job is to act as a pro-active technical product manager.
-    When a user describes an idea, do NOT write any code. Instead:
-    1. Acknowledge and analyze their idea enthusiastically in Arabic.
-    2. Ask exactly 2 to 3 deep, clear, and professional questions in Arabic to help refine their concept (e.g., questions about the visual theme, specific mechanics, mobile vs desktop controls, or score keeping).
-    3. Keep your response concise, polite, and completely in Arabic. Do NOT output HTML or CSS in this mode.
-    """
 
-    # 2. موجه وضع التوليد وصياغة الأكواد الكاملة (Code Generation System Prompt)
-    generation_system = """
-    You are 'SPIDER-AI Code Architect' - an elite, world-class senior software engineer and game developer.
-    Your sole focus is to design, code, and deliver fully working, bug-free, and single-file HTML executable applications, tools, or games.
-    
-    CRITICAL QUALITY CONTROL RULES:
-    1. NEVER use code placeholders, comments indicating omissions (such as "// rest of code", "// TODO: implement"). Write every single line of styling, logic, and HTML markup completely.
-    2. The output must be completely self-contained in ONE HTML file. Include Tailwind CSS or custom CSS inside <style> tags, and all interactive JavaScript logic inside <script> tags.
-    3. Always design a modern, visually stunning UI/UX with beautiful dark/neon palettes, smooth CSS animations, and highly responsive components (mobile-friendly).
-    4. For games (2D/3D): Always provide clean controls (both desktop keyboard keys and on-screen touch buttons for mobile compliance), audio visualizer context if relevant, scoring systems, and professional Game Over / Restart states.
-    5. All visible text elements inside the generated application must be in the ARABIC language to suit the target userbase.
-    6. Your response MUST strictly start with <!DOCTYPE html> and end with </html>. Do not write any markdown blocks (such as ```html) or pre/post commentary.
-    """
+def call_spider_agent(prompt_type: str = "generation", user_prompt: str = "", existing_code: str = "") -> str:
+    system_prompt = """
+You are SPIDER-AI Code Architect — an elite senior software engineer and game developer.
+Your only job: deliver fully working, bug-free, single-file HTML web applications and games.
 
-    # إعداد السياق البرمجي للذكاء الاصطناعي بناء على المرحلة
-    if prompt_type == "generation":
-        # تجميع كامل المحادثة السابقة لتمريرها كمتطلبات برمجية للنموذج ليفهم كل التفاصيل
-        compiled_messages = [{"role": "system", "content": generation_system}]
-        for msg in chat_history:
-            compiled_messages.append({"role": msg["role"], "content": msg["content"]})
-        # توجيه أخير بالبناء الكامل
-        compiled_messages.append({"role": "user", "content": "Now, write the complete, executable HTML code. Ensure no placeholders are used."})
+ABSOLUTE RULES:
+1. NEVER use placeholders, "// TODO", "// rest of code", or any omission comments. Write every line.
+2. Output is a single self-contained HTML file. All CSS in <style>, all JS in <script>.
+3. UI must be visually exceptional: dark/neon palette, smooth animations, fully responsive.
+4. For games: keyboard + on-screen touch controls, scoring system, Game Over / Restart states.
+5. ALL visible text in the generated app must be in ARABIC.
+6. Response MUST start with <!DOCTYPE html> and end with </html>. No markdown fences. No commentary.
+"""
+
+    if prompt_type == "edit":
+        compiled_prompt = f"""
+Current code:
+---
+{existing_code}
+---
+Apply this modification precisely: "{user_prompt}"
+Keep all existing features intact.
+Output the FULL modified file starting with <!DOCTYPE html> ending with </html>.
+"""
     else:
-        # وضع النقاش المستمر وطرح الأسئلة
-        compiled_messages = [
-            {"role": "system", "content": discussion_system},
-            {"role": "user", "content": f"Here is my input: {user_prompt}"}
-        ]
+        compiled_prompt = (
+            f"Build a complete, production-quality single-file HTML solution for: {user_prompt}"
+        )
 
     try:
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=compiled_messages
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": compiled_prompt}
+            ]
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
         return f"ERROR_API_FAILED: {str(e)}"
 
-# --- الهيكل البصري وعنوان المنصة ---
+# ═══════════════════════════════════════════════════════════════
+# HEADER
+# ═══════════════════════════════════════════════════════════════
 st.markdown("""
-    <div style="text-align: center; margin-bottom: 20px; padding: 12px; background: #151b23; border: 1px solid #30363d; border-radius: 12px;">
-        <h1 style="margin: 0; font-size: 1.8rem; font-weight: 800; background: linear-gradient(90deg, #58a6ff, #2ea44f); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-            🕸️ جوهر SPIDER-AI : محرك التجسيد البرمجي
-        </h1>
-        <p style="margin: 5px 0 0 0; color: #8b949e; font-size: 0.9rem;">التحويل التفاعلي للأفكار إلى تطبيقات وألعاب جاهزة فوراً في ملف واحد</p>
+<div class="hero-header">
+    <div class="header-tagline">محرك التجسيد البرمجي / Code Embodiment Engine</div>
+    <div class="logo-mark">
+        <div class="web-icon">🕸</div>
+        SPIDER&ndash;AI
     </div>
+    <div class="status-pill">
+        <span class="status-dot"></span>
+        ONLINE
+    </div>
+</div>
 """, unsafe_allow_html=True)
 
-# تقسيم الشاشة تلقائياً (تتحول إلى رأسية على الهواتف تلقائياً بفضل Streamlit)
-col_chat_pane, col_workspace_pane = st.columns([1, 1.2], gap="medium")
+# ═══════════════════════════════════════════════════════════════
+# LAYOUT: Chat (right) | Workspace (left)
+# ═══════════════════════════════════════════════════════════════
+col_workspace, col_chat = st.columns([1.4, 1], gap="small")
 
-# --- العمود الأيمن: محرك المحادثة وصياغة الأسئلة التفاعلية ---
-with col_chat_pane:
-    st.markdown("### 💬 ناقش فكرتك مع المطور")
-    
-    # حاوية عرض الرسائل السابقة بشكل منسق
-    chat_container = st.container(height=400)
+# ───────────────────────────────────────────
+# CHAT PANEL
+# ───────────────────────────────────────────
+with col_chat:
+    st.markdown('<div class="panel-label">◈ غرفة الأوامر / Command Room</div>', unsafe_allow_html=True)
+
+    chat_container = st.container(height=int(
+        # approximate height: full viewport minus header + input
+        520
+    ))
     with chat_container:
         for msg in st.session_state.messages:
             with st.chat_message(msg["role"]):
                 st.markdown(msg["content"])
-                
-    # استقبال الأوامر والمدخلات الجديدة من المستخدم
-    if user_cmd := st.chat_input("تكلم مع المطور أو أجب عن الأسئلة هنا..."):
-        # إضافة رسالة المستخدم للسجل
-        st.session_state.messages.append({"role": "user", "content": user_cmd})
-        
-        # استدعاء الوكيل لمواصلة النقاش وطرح أسئلة توجيهية هادفة للعميل
-        with st.spinner("🤖 يحلل المطور الفكرة ويصيغ أسئلة ذكية لتطويرها..."):
-            agent_reply = call_spider_agent(
-                prompt_type="discussion",
-                user_prompt=user_cmd,
-                chat_history=st.session_state.messages
-            )
-            
-            if "ERROR_API_FAILED" in agent_reply:
-                st.session_state.error_occurred = True
-            else:
-                st.session_state.messages.append({"role": "assistant", "content": agent_reply})
-        st.rerun()
 
-    # زر إطلاق البناء البرمجي الفخم عند اكتمال النقاش
-    st.write("---")
-    st.markdown("<p style='text-align: center; color: #8b949e; font-size: 12px;'>عندما تكتمل فكرتك وتجيب عن الأسئلة، اضغط على الزر بالأسفل لتجسيدها برمجياً فوراً 👇</p>", unsafe_allow_html=True)
-    if st.button("🚀 ابدأ التجسيد وبناء الكود الآن", use_container_width=True):
+    if user_cmd := st.chat_input("اكتب فكرتك أو طلب التعديل..."):
+        st.session_state.messages.append({"role": "user", "content": user_cmd})
         st.session_state.is_generating = True
         st.session_state.error_occurred = False
         st.rerun()
 
-# --- العمل على معالجة طلب البناء والتوليد في الخلفية بعد تحديث الشاشة ---
+# ───────────────────────────────────────────
+# GENERATION PROCESSING
+# ───────────────────────────────────────────
 if st.session_state.is_generating:
-    # تهيئة سجل البناء والتفكير التفاعلي للوكيل البرمجي
-    st.session_state.architect_logs = [
-        "⏳ [1/4] جاري تجميع كامل النقاش وتوجيهاتك وصياغة الهيكل المعماري..."
-    ]
-    time.sleep(1.0)
-    
-    st.session_state.architect_logs.append("⏳ [2/4] جاري تصميم واجهات الـ CSS والتأكد من توافقية شاشات الهواتف...")
-    time.sleep(1.0)
-    
-    # استدعاء التوليد الفعلي بناءً على تاريخ المحادثة الكامل
-    with st.spinner("⚡ يقوم المهندس البرمجي ببناء وتجميع الكود كاملاً..."):
-        raw_response = call_spider_agent(
-            prompt_type="generation",
-            chat_history=st.session_state.messages
-        )
-        
-        if "ERROR_API_FAILED" in raw_response:
-            st.session_state.error_occurred = True
-            st.session_state.is_generating = False
-            st.session_state.messages.append({
-                "role": "assistant", 
-                "content": f"⚠️ تعذر جلب الكود البرمجي بنجاح. تفاصيل الخطأ: {raw_response}"
-            })
-            st.rerun()
-        else:
-            # معالجة وتصفية كود HTML البرمجي بدقة
-            final_html = extract_html_code(raw_response)
-            st.session_state.generated_html = final_html
-            
-            # إنهاء خطوات تجميع الكود التخيلية بنجاح
-            st.session_state.architect_logs.append("⏳ [3/4] جاري دمج دوال التفاعل ومصفوفة الحركة للـ JavaScript...")
-            time.sleep(1.0)
-            st.session_state.architect_logs.append("🎉 [4/4] تمت عملية التجميع والبناء بنجاح! تفضل بمعاينة لعبتك أو موقعك الآن.")
-            
-            st.session_state.messages.append({
-                "role": "assistant", 
-                "content": "✨ تم تجسيد وتجميع مشروعك بنجاح تام! الكود متكامل وبدون أي اختصارات وجاهز للمعاينة في التبويب المخصص على اليسار."
-            })
-            
-            st.session_state.is_generating = False
-            st.rerun()
+    last_user_msg = st.session_state.messages[-1]["content"]
 
-# --- العمود الأيسر: مساحة التجسيد والتفاعل والتحكم البرمجي ---
-with col_workspace_pane:
-    st.markdown("### 🛠️ مساحة التجسيد البرمجي والمعاينة")
-    
+    is_edit = bool(st.session_state.generated_html)
+    prompt_type = "edit" if is_edit else "generation"
+    existing_code = st.session_state.generated_html if is_edit else ""
+
+    st.session_state.architect_logs = [
+        ("active", "تحليل المتطلبات وهيكلة المشروع"),
+        ("wait",   "بناء الواجهات البصرية وطبقات CSS" if not is_edit else "دمج التعديلات مع الكود الحالي"),
+        ("wait",   "حقن منطق JavaScript والتفاعلية"),
+        ("wait",   "مراجعة الكود وضمان الاكتمال"),
+    ]
+
+    with st.spinner(""):
+        raw_response = call_spider_agent(
+            prompt_type=prompt_type,
+            user_prompt=last_user_msg,
+            existing_code=existing_code
+        )
+
+    if "ERROR_API_FAILED" in raw_response:
+        st.session_state.error_occurred = True
+        st.session_state.is_generating = False
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": f"⚠️ فشل الاتصال بمحرك التوليد. حاول مرة أخرى.\n\n`{raw_response.replace('ERROR_API_FAILED:', '').strip()}`"
+        })
+    else:
+        final_html = extract_html_code(raw_response)
+        st.session_state.generated_html = final_html
+        st.session_state.generation_count += 1
+        st.session_state.architect_logs = [
+            ("done", "تحليل المتطلبات وهيكلة المشروع"),
+            ("done", "بناء الواجهات البصرية وطبقات CSS" if not is_edit else "دمج التعديلات مع الكود الحالي"),
+            ("done", "حقن منطق JavaScript والتفاعلية"),
+            ("done", "اكتمل التجسيد — الكود جاهز للتشغيل"),
+        ]
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": "✓ تم. الكود جاهز في تبويب **المعاينة الحية** →"
+        })
+        st.session_state.is_generating = False
+
+    st.rerun()
+
+# ───────────────────────────────────────────
+# WORKSPACE PANEL
+# ───────────────────────────────────────────
+with col_workspace:
+    st.markdown('<div class="panel-label">◈ مساحة التجسيد / Build Workspace</div>', unsafe_allow_html=True)
+
+    # Error banner
     if st.session_state.error_occurred:
         st.markdown("""
-            <div class='error-card'>
-                <h4>⚠️ واجه المحرك خطأ في معالجة الطلب</h4>
-                <p>الرجاء إعادة المحاولة أو التحقق من اتصال الإنترنت وخوادم التوليد.</p>
-            </div>
+        <div class="error-terminal">
+            <div class="err-header">✕ خطأ في الاتصال</div>
+            <div>تعذر الوصول إلى محرك التوليد. الخوادم قد تكون مشغولة. أعد المحاولة.</div>
+        </div>
         """, unsafe_allow_html=True)
-        
-    # ألسنة تبويب المعاينة التفاعلية المخصصة
-    tab_preview, tab_source, tab_architect = st.tabs([
-        "👁️ المعاينة الحية (Live Preview)", 
-        "💻 الكود المصدري (Source Code)", 
-        "⚙️ سجل معالج البناء (Build Logs)"
+
+    # Tabs
+    tab_preview, tab_source, tab_logs = st.tabs([
+        "PREVIEW",
+        "SOURCE",
+        "LOGS",
     ])
-    
-    # 1. تبويب المعاينة الفورية (Live Preview)
+
+    # ── Preview Tab ──
     with tab_preview:
         if st.session_state.generated_html:
-            # لوحة تحكم سريعة أعلى المعاينة
-            col_ctrl_1, col_ctrl_2 = st.columns([3, 1])
-            with col_ctrl_1:
-                st.caption("⚡ يعمل الكود حالياً داخل بيئة معزولة وآمنة (Sandboxed Frame).")
-            with col_ctrl_2:
-                if st.button("🔄 تحديث المعاينة", key="refresh_iframe"):
+            c1, c2 = st.columns([5, 1])
+            with c1:
+                st.caption(f"build #{st.session_state.generation_count} · sandboxed iframe · read-only")
+            with c2:
+                if st.button("↺ reload"):
                     st.rerun()
-                    
-            # حقن المعاينة الحية مع تفعيل التجاوب الذكي
-            components.html(st.session_state.generated_html, height=520, scrolling=True)
+            components.html(
+                st.session_state.generated_html,
+                height=580,
+                scrolling=True
+            )
         else:
-            st.info("💡 بمجرد اكتمال نقاشك مع المطور الذكي والضغط على زر 'بدء التجسيد'، ستظهر معاينة اللعبة أو الموقع هنا فوراً.")
-            
-    # 2. تبويب الكود المصدري الكامل (Source Code)
+            st.markdown("""
+            <div class="empty-workspace" style="height:560px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;">
+                <div class="empty-grid" style="width:80px; height:80px; position:relative;">
+                    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="0.5" y="0.5" width="79" height="79" rx="7.5" stroke="#1a1a1a"/>
+                        <line x1="0" y1="20" x2="80" y2="20" stroke="#111" stroke-width="1"/>
+                        <line x1="0" y1="40" x2="80" y2="40" stroke="#111" stroke-width="1"/>
+                        <line x1="0" y1="60" x2="80" y2="60" stroke="#111" stroke-width="1"/>
+                        <line x1="20" y1="0" x2="20" y2="80" stroke="#111" stroke-width="1"/>
+                        <line x1="40" y1="0" x2="40" y2="80" stroke="#111" stroke-width="1"/>
+                        <line x1="60" y1="0" x2="60" y2="80" stroke="#111" stroke-width="1"/>
+                        <circle cx="40" cy="40" r="5" fill="#e8c84a" opacity="0.8"/>
+                        <circle cx="40" cy="40" r="10" stroke="#e8c84a" stroke-width="0.5" opacity="0.3"/>
+                        <circle cx="40" cy="40" r="18" stroke="#e8c84a" stroke-width="0.5" opacity="0.12"/>
+                    </svg>
+                </div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:#2a2a2a; letter-spacing:0.1em;">AWAITING INPUT</div>
+                <div style="font-size:0.78rem; color:#1e1e1e; max-width:240px; text-align:center; line-height:1.7;">
+                    اكتب فكرتك البرمجية في غرفة الأوامر لتجسيدها هنا
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # ── Source Tab ──
     with tab_source:
         if st.session_state.generated_html:
-            st.caption("📦 يمكنك تحميل الملف البرمجي أو نسخه كاملاً:")
-            
-            # أزرار النسخ والتحميل
-            col_download, col_copy = st.columns(2)
-            with col_download:
+            dl_col, _ = st.columns([1, 2])
+            with dl_col:
                 st.download_button(
-                    label="📥 تحميل ملف الـ HTML الكامل",
+                    label="↓ تحميل HTML",
                     data=st.session_state.generated_html,
                     file_name="spider_project.html",
                     mime="text/html"
                 )
-            with col_copy:
-                st.caption("ملاحظة: يمكنك نسخ الكود بالكامل بالضغط على زر النسخ المدمج في أعلى يمين نافذة الكود بالأسفل 👇")
-                
-            # عرض الكود المصدري منسقاً
+            st.caption("انسخ الكود من زر النسخ أعلى يسار الحقل ↓")
             st.code(st.session_state.generated_html, language="html", line_numbers=True)
         else:
-            st.info("لا يوجد كود برمجي حالياً. ابدأ النقاش والتجسيد لتوليد الكود البرمجي وعرضه هنا.")
+            st.markdown("""
+            <div style="padding:40px 20px; text-align:center; font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:#1e1e1e;">
+                // no code generated yet
+            </div>
+            """, unsafe_allow_html=True)
 
-    # 3. تبويب سجلات البناء والتحليل الهندسي (Architect Logs)
-    with tab_architect:
-        st.caption("⚙️ تفاصيل وسجل عملية البناء الحالية التي يقوم بها الوكيل البرمجي الذكي:")
+    # ── Logs Tab ──
+    with tab_logs:
         if st.session_state.architect_logs:
-            log_content = ""
-            for log in st.session_state.architect_logs:
-                if "🎉" in log or "✅" in log:
-                    log_content += f"<div class='step-done' style='margin-bottom:8px;'>{log}</div>"
+            lines_html = ""
+            for state, text in st.session_state.architect_logs:
+                if state == "done":
+                    lines_html += f'<div class="log-line log-done"><span class="log-prefix">✓</span> {text}</div>'
+                elif state == "active":
+                    lines_html += f'<div class="log-line log-active"><span class="log-prefix">›</span> {text}</div>'
                 else:
-                    log_content += f"<div class='step-active' style='margin-bottom:8px;'>{log}</div>"
-            
+                    lines_html += f'<div class="log-line log-wait"><span class="log-prefix">·</span> {text}</div>'
+
             st.markdown(f"""
-                <div class='thinking-box'>
-                    {log_content}
-                </div>
+            <div class="terminal-log">
+                <div class="log-header">SPIDER-AI / BUILD LOG</div>
+                {lines_html}
+            </div>
             """, unsafe_allow_html=True)
         else:
-            st.info("لا توجد عمليات جارية حالياً. بانتظار إرسال توجيه من قبلك والبدء بالتجسيد.")
+            st.markdown("""
+            <div style="padding:40px 20px; text-align:center; font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:#1e1e1e;">
+                // no active build process
+            </div>
+            """, unsafe_allow_html=True)
